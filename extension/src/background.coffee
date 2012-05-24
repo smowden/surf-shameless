@@ -5,20 +5,25 @@ intercept_sites = ["youjizz.com", "spankwire.com", "webmd.com"]
 # NOTE, leaves no trace in history but the page still shows up in the omnibox (without details)
 # and is not removable through the exposed apis
 # todo report to google
+isBlacklistedUrl = (url) ->
+  for site in intercept_sites
+    if url.indexOf("http://www.#{site}") >= 0 or url.indexOf("http://#{site}") >= 0
+      true
+    false
+
 interceptRequest = (info) ->
   current_url = info.url
 
-  for site in intercept_sites
-    if current_url.indexOf("http://www.#{site}") >= 0 or current_url.indexOf("http://#{site}") >= 0
-      chrome.windows.create({
-        "url": info.url,
-        "incognito": true
-        },
-      () ->
-        chrome.tabs.remove(info.tabId)
-        console.log("spawned new window")
-      )
-      return {"cancel": true}
+  if isBlacklistedUrl(current_url)
+    chrome.windows.create({
+      "url": info.url,
+      "incognito": true
+      },
+    () ->
+      chrome.tabs.remove(info.tabId)
+      console.log("spawned new window")
+    )
+    return {"cancel": true}
   return undefined
 
 
@@ -85,34 +90,34 @@ benchmark = () ->
 class PrivateStash
   # todo add omnibox to permissions and enable users to add custom urls to their stash
 
-class FaceProtect
+class WipeMode
 
-  facebook_tabs = []
+  open_tabs = []
 
   tabAdded: (tabId, changeInfo, tab) ->
-    if tab.url.indexOf("facebook") >= 0 and facebook_tabs.indexOf(tabId) == -1
-      facebook_tabs.push(tabId)
+    if isBlacklistedUrl(tab.url) and open_tabs.indexOf(tabId) == -1
+      open_tabs.push(tabId)
       console.log(tab)
 
     if changeInfo.url
-      if changeInfo.url.indexOf("facebook") >= 0 and facebook_tabs.indexOf(tabId) == -1
-        facebook_tabs.push(tabId)
-      else if changeInfo.url.indexOf("facebook") == -1 and facebook_tabs.indexOf(tabId) >= 0
+      if isBlacklistedUrl(changeInfo.url) and open_tabs.indexOf(tabId) == -1
+        open_tabs.push(tabId)
+      else if not isBlacklistedUrl(changeInfo.url) and facebook_tabs.indexOf(tabId) >= 0
         this.tabClosed(tabId)
 
     console.log(facebook_tabs)
 
   tabClosed: (tabId) ->
-    former_fb_tab = facebook_tabs.indexOf(tabId)
+    former_bad_tab = open_tabs.indexOf(tabId)
 
-    if former_fb_tab >= 0
-      console.log("tab #{former_fb_tab} closed")
-      facebook_tabs.splice(former_fb_tab, 1)
-      if facebook_tabs.length == 0
-        this.cleanupFacebook()
+    if former_bad_tab >= 0
+      console.log("tab #{former_bad_tab} closed")
+      open_tabs.splice(former_bad_tab, 1)
+      if open_tabs.length == 0
+        this.wipeHistory()
       console.log("facebook tabs open "+facebook_tabs.length)
 
-  cleanupFacebook: () ->
+  wipeHistory: () ->
     #todo write regex cleanup
     #todo show confirmation
     console.log("time to clean up fb logs...")
