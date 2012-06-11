@@ -1,7 +1,5 @@
 intercept_sites = ["youjizz.com", "spankwire.com", "webmd.com"]
 
-
-
 # NOTE, leaves no trace in history but the page still shows up in the omnibox (without details)
 # and is not removable through the exposed apis
 # todo report to google
@@ -11,34 +9,35 @@ isBlacklistedUrl = (url) ->
       true
     false
 
-interceptRequest = (info) ->
-  current_url = info.url
-
-  if isBlacklistedUrl(current_url)
-    chrome.windows.create({
-      "url": info.url,
-      "incognito": true
-      },
-    () ->
-      chrome.tabs.remove(info.tabId)
-      console.log("spawned new window")
-    )
-    return {"cancel": true}
-  return undefined
 
 
-cleanupHistory = () ->
-  all_filtered_sites = intercept_sites
-  regex_str = "^(http://|https://)?([aA-zZ0-9\\-\\_]*\\.)?(#{ all_filtered_sites.join("|") })(/.*)?$"
-  all_sites_regex = new RegExp(regex_str)
+
+
+cleanupHistory = (startTime, endTime) ->
+  if not startTime
+    t = new Date(2010, 0, 1, 0)
+    startTime = t.getTime()
+
+  if not endTime
+    t = new Date()
+    endTime = t.getTime()
+
+  maxResults = 1000000000
   chrome.history.search(
-    {"text": ""},
-    (history_items) ->
+    {text: "", startTime: startTime, endTime: endTime, maxResults: maxResults},
+    # specifying a text for the search seems to just return completely random results
+    (historyItems) ->
+      #console.log(historyItems)
       #todo show confirmation promt of some kind before deletion
-      for h_item in history_items
-        if h_item.url.toLowerCase().search(all_sites_regex) != -1
-          chrome.history.deleteUrl({"url": h_item.url})
+
+      for hItem in historyItems
+          if hItem.url.indexOf("wikipedia.org") >= 0
+            chrome.history.deleteUrl({"url": hItem.url})
+
+      console.profileEnd("iterating through history")
+      undefined
   )
+  undefined
 
 Mode = () ->
   setMode = (mode) ->
@@ -132,7 +131,7 @@ chrome.webRequest.onBeforeRequest.addListener(
   },
   ["blocking"]
 )
-
+"""
 chrome.tabs.onUpdated.addListener(
   (tabId, changeInfo, tab) ->
     if face_protect
@@ -144,8 +143,9 @@ chrome.tabs.onRemoved.addListener(
     if face_protect
       face_protect.tabClosed(tabId)
 )
-
-cleanupHistory()
+"""
+console.profile("iterating through history")
+cleanupHistory2()
 
 localStorage["enable_faceprotect"] = true
 

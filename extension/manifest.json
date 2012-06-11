@@ -7,5 +7,8 @@
         "default_icon": "icon.png"
     },
     "permissions": [ "tabs", "http://*/*", "webRequest", "webRequestBlocking", "history" ],
-    "background_page": "background.html"
+    "background_page": "background.html",
+    "chrome_url_overrides" : {
+        "newtab": "blank.html"
+    }
 }
