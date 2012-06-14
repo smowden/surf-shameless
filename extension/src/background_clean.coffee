@@ -1,38 +1,20 @@
+# todo on first run flush the cache or delete "History Provider Cache" in user folder
+# todo credit pixture for the icon ( http://www.pixture.com/drupal/ )
 interceptSites = ["youjizz.com", "spankwire.com", "webmd.com"]
 
 isBlacklistedUrl = (url) ->
-  console.log(url)
   for site in interceptSites
     if url.indexOf("http://www.#{site}") >= 0 or url.indexOf("http://#{site}") >= 0
       return true
   false
 
-interceptRequest = (info) ->
-  console.log("intercepted request")
-  current_url = info.url
-
-  if isBlacklistedUrl(current_url)
-    chrome.windows.create({
-      "url": info.url,
-      "incognito": true
-      },
-    () ->
-      chrome.tabs.remove(info.tabId)
-      console.log("spawned new window")
-    )
-    return {"cancel": true}
-  return undefined
-
 
 class WipeMode
   openTabs = [] # open tabs are all the tabs whose history should be deleted upon closing all of them
+  badRedirects = []
   firstBadTabTime = undefined
 
   tabAdded: (tabId, changeInfo, tab) ->
-
-    console.log(changeInfo)
-    if changeInfo.status == "complete"
-      console.log(tab)
     currentUrl = tab.url
     if changeInfo.url
       currentUrl = changeInfo.url
@@ -41,62 +23,91 @@ class WipeMode
       firstBadTabTime = (new Date().getTime() - 10000) if not firstBadTabTime
       # ^ the 10 second difference is to make sure we wont miss anything
       openTabs.push(tabId)
-      console.log(tab)
+      console.log(openTabs)
     else if not isBlacklistedUrl(currentUrl) and openTabs.indexOf(tabId) >= 0
       this.tabClosed(tabId)
 
-    console.log(openTabs)
 
   tabClosed: (tabId) ->
     formerBadTab = openTabs.indexOf(tabId)
 
     if formerBadTab >= 0
-      console.log("tab #{formerBadTab} closed")
       openTabs.splice(formerBadTab, 1)
       if openTabs.length == 0
         this.wipeHistory(firstBadTabTime)
         firstBadTabTime = undefined
-      console.log("tabs open "+openTabs.length)
 
-  wipeHistory: (startTime) ->
+  purgeBadUrl: (url) ->
+    # todo does not completely delete all traces todo investigate (if used with an existing profile)
+    # unfortunately we cant retroactively delete all bad redirects but
+    # this should take care of the ordinary www redirects
 
-    startTime = new Date(2010, 0, 1, 0).getTime() if not startTime
+    if url.indexOf("http") == -1
+      url = "http://#{url}"
+
+    if url.indexOf("www") >= 0
+      chrome.history.deleteUrl({url: url})
+      chrome.history.deleteUrl({url: url.replace("http://www.", "http://")})
+      console.log("purged #{url.replace("http://www.", "http://")}")
+    else
+      chrome.history.deleteUrl({url: url})
+      chrome.history.deleteUrl({url: url.replace("http://", "http://www.")})
+      console.log("purged #{url.replace("http://", "http://www.")}")
+
+  onRedirect: (details) ->
+    if isBlacklistedUrl(details.redirectUrl) and badRedirects.indexOf(details.redirectUrl)
+      badRedirects.push(details.url)
+      console.log(badRedirects)
+    undefined
+
+  wipeHistory: (startTime, doFullClean) ->
+
+    startTime = new Date(2000, 0, 1, 0).getTime() if not startTime
 
     endTime = new Date().getTime()
+
+    if doFullClean
+      for site in interceptSites
+        this.purgeBadUrl(site)
 
     maxResults = 1000000000
     chrome.history.search(
       {text: "", startTime: startTime, endTime: endTime, maxResults: maxResults},
       # specifying a text for the search seems to just return completely random results
-    (historyItems) ->
-      #console.log(historyItems)
-      #todo show confirmation promt of some kind before deletion
-
+    (historyItems) =>
       for hItem in historyItems
-        console.log(isBlacklistedUrl(hItem.url))
         if isBlacklistedUrl(hItem.url)
-          chrome.history.deleteUrl({"url": hItem.url})
+          this.purgeBadUrl(hItem.url)
 
-      console.profileEnd("iterating through history")
+      for nastyRedirect in badRedirects
+        chrome.history.deleteUrl(url: nastyRedirect)
+
       undefined
     )
     undefined
 
 #############################################
 
+
 wipeMode = new WipeMode()
-wipeMode.wipeHistory()
-"""
+wipeMode.wipeHistory(undefined, true)
 
 
 chrome.tabs.onUpdated.addListener(
-  (tabId, changeInfo, tab) ->
-    wipeMode.tabAdded(tabId, changeInfo, tab)
+    wipeMode.tabAdded
 )
 
 chrome.tabs.onRemoved.addListener(
   (tabId, removeInfo) ->
     wipeMode.tabClosed(tabId)
+)
+
+chrome.webRequest.onBeforeRedirect.addListener(
+  wipeMode.onRedirect,
+  {
+    urls: ["http://*/*"],
+    types: ["main_frame"]
+  }
 )
 """
 chrome.webRequest.onBeforeRequest.addListener(
@@ -107,3 +118,4 @@ chrome.webRequest.onBeforeRequest.addListener(
   },
   ["blocking"]
 )
+"""
