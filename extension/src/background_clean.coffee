@@ -1,4 +1,4 @@
-# todo on first run flush the cache or delete "History Provider Cache" in user folder
+# todo on first run flush the cache or delete "History Provider Cache" in user folder AND archived history
 # todo credit pixture for the icon ( http://www.pixture.com/drupal/ )
 interceptSites = ["youjizz.com", "spankwire.com", "webmd.com"]
 
@@ -45,12 +45,11 @@ class WipeMode
     if url.indexOf("http") == -1
       url = "http://#{url}"
 
+    chrome.history.deleteUrl({url: url})
     if url.indexOf("www") >= 0
-      chrome.history.deleteUrl({url: url})
       chrome.history.deleteUrl({url: url.replace("http://www.", "http://")})
       console.log("purged #{url.replace("http://www.", "http://")}")
     else
-      chrome.history.deleteUrl({url: url})
       chrome.history.deleteUrl({url: url.replace("http://", "http://www.")})
       console.log("purged #{url.replace("http://", "http://www.")}")
 
