@@ -8,7 +8,6 @@ isBlacklistedUrl = (url) ->
       return true
   false
 
-
 class WipeMode
   openTabs = [] # open tabs are all the tabs whose history should be deleted upon closing all of them
   badRedirects = []
@@ -25,7 +24,7 @@ class WipeMode
       openTabs.push(tabId)
       console.log(openTabs)
     else if not isBlacklistedUrl(currentUrl) and openTabs.indexOf(tabId) >= 0
-      this.tabClosed(tabId)
+      @tabClosed(tabId)
 
 
   tabClosed: (tabId) ->
@@ -34,7 +33,7 @@ class WipeMode
     if formerBadTab >= 0
       openTabs.splice(formerBadTab, 1)
       if openTabs.length == 0
-        this.wipeHistory(firstBadTabTime)
+        @wipeHistory(firstBadTabTime)
         firstBadTabTime = undefined
 
   purgeBadUrl: (url) ->
@@ -67,7 +66,7 @@ class WipeMode
 
     if doFullClean
       for site in interceptSites
-        this.purgeBadUrl(site)
+        @purgeBadUrl(site)
 
     maxResults = 1000000000
     chrome.history.search(
