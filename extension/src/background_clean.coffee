@@ -1,29 +1,101 @@
 # todo on first run flush the cache or delete "History Provider Cache" in user folder AND archived history
 # todo credit pixture for the icon ( http://www.pixture.com/drupal/ )
-interceptSites = ["youjizz.com", "spankwire.com", "webmd.com"]
 
-isBlacklistedUrl = (url) ->
-  for site in interceptSites
-    if url.indexOf("http://www.#{site}") >= 0 or url.indexOf("http://#{site}") >= 0
-      return true
-  false
+#############################################
+
+class MyBlacklist
+  blacklistUrls = ["spankwire.com"]
+  customUrls = []
+  blacklistKeywords = []
+  lastListUpdate = 0
+
+
+  getBlacklist: (type) ->
+    if type == "urls"
+      return blacklistUrls
+    else
+      return blacklistKeywords
+
+  isBlacklisted: (string, type) ->
+    if type == "url"
+      lookupDir = blacklistUrls if type == "url"
+      lookupDir = blacklistKeywords if type == "keyword"
+      for s in lookupDir
+        if type == "url"
+          if string.indexOf("http://www.#{s}") >= 0 or string.indexOf("http://#{s}") >= 0
+            return true
+        else if type == "keyword"
+          if string.indexOf(s) >= 0
+            return true
+    false
+
+  getAvailableLists: (availableLists, refresh) ->
+    if (localStorage["myAvailableLists"] == "undefined" and not availableLists) or refresh
+      @getLocalFile("lists/_available", @getAvailableLists)
+      undefined
+    else
+      console.log(availableLists)
+      localStorage["myAvailableLists"] = JSON.stringify(availableLists)
+
+  loadEnabledLists: () ->
+    enabledLists = JSON.parse(localStorage["enabledLists"]) if localStorage["enabledLists"] != "undefined"
+
+    if enabledLists
+      for listName, enabled in enabledLists
+        if enabled
+          @loadList(undefined, listName)
+
+      lastListUpdate = Date.now()
+
+
+  loadList: (listObject, name) ->
+    if not listObject
+      @getLocalFile("lists/#{name}", @loadList)
+    else
+      blacklistUrls.concat(listObject.content) if listObject.type == "urls"
+      blacklistKeywords.concat(listObject.content) if listObject.type == "keywords"
+
+      console.log(blacklistUrls)
+      console.log(blacklistKeywords)
+
+  reload: () ->
+    if localStorage["lastUserUpdate"] >= lastListUpdate
+      @loadEnabledLists()
+
+  setListState: (name, state) -> #state is true/false for enabled/disabled
+    enabledLists = JSON.parse(localStorage["enabledLists"])
+    if state == true or state == false
+      enabledLists[name] = state
+    localStorage["enabledLists"] = JSON.stringify(enabledLists)
+    @loadEnabledLists()
+
+  getLocalFile: (path, callback) ->
+    xhr = new XMLHttpRequest()
+    xhr.open("GET", path, true)
+    xhr.onreadystatechange = =>
+      if xhr.readyState == 4
+        callback(JSON.parse(xhr.responseText))
+    xhr.send()
 
 class WipeMode
   openTabs = [] # open tabs are all the tabs whose history should be deleted upon closing all of them
   badRedirects = []
   firstBadTabTime = undefined
 
+  constructor: (@myBlacklist) ->
+
   tabAdded: (tabId, changeInfo, tab) ->
+
     currentUrl = tab.url
     if changeInfo.url
       currentUrl = changeInfo.url
 
-    if isBlacklistedUrl(currentUrl) and openTabs.indexOf(tabId) == -1
+    if myBlacklist.isBlacklisted(currentUrl, "url") and openTabs.indexOf(tabId) == -1
       firstBadTabTime = (new Date().getTime() - 10000) if not firstBadTabTime
       # ^ the 10 second difference is to make sure we wont miss anything
       openTabs.push(tabId)
       console.log(openTabs)
-    else if not isBlacklistedUrl(currentUrl) and openTabs.indexOf(tabId) >= 0
+    else if not myBlacklist.isBlacklisted(currentUrl, "url") and openTabs.indexOf(tabId) >= 0
       @tabClosed(tabId)
 
 
@@ -53,7 +125,7 @@ class WipeMode
       console.log("purged #{url.replace("http://", "http://www.")}")
 
   onRedirect: (details) ->
-    if isBlacklistedUrl(details.redirectUrl) and badRedirects.indexOf(details.redirectUrl)
+    if myBlacklist.isBlacklisted(details.redirectUrl, "url") and badRedirects.indexOf(details.redirectUrl)
       badRedirects.push(details.url)
       console.log(badRedirects)
     undefined
@@ -61,11 +133,10 @@ class WipeMode
   wipeHistory: (startTime, doFullClean) ->
 
     startTime = new Date(2000, 0, 1, 0).getTime() if not startTime
-
     endTime = new Date().getTime()
 
     if doFullClean
-      for site in interceptSites
+      for site in myBlacklist.getBlacklist("urls")
         @purgeBadUrl(site)
 
     maxResults = 1000000000
@@ -74,7 +145,7 @@ class WipeMode
       # specifying a text for the search seems to just return completely random results
     (historyItems) =>
       for hItem in historyItems
-        if isBlacklistedUrl(hItem.url)
+        if myBlacklist.isBlacklisted(hItem.url, "url")
           this.purgeBadUrl(hItem.url)
 
       for nastyRedirect in badRedirects
@@ -84,10 +155,12 @@ class WipeMode
     )
     undefined
 
-#############################################
+myBlacklist = new MyBlacklist()
+console.log(myBlacklist)
+myBlacklist.getAvailableLists()
+console.log(myBlacklist.getBlacklist("urls"))
 
-
-wipeMode = new WipeMode()
+wipeMode = new WipeMode(myBlacklist)
 wipeMode.wipeHistory(undefined, true)
 
 
@@ -98,6 +171,17 @@ chrome.tabs.onUpdated.addListener(
 chrome.tabs.onRemoved.addListener(
   (tabId, removeInfo) ->
     wipeMode.tabClosed(tabId)
+)
+
+chrome.extension.onRequest.addListener(
+  (request, sender, sendResponse) ->
+    if request.action == "getAvailableLists"
+      console.log("backgroundpage got request")
+      console.log(localStorage["myAvailableLists"])
+      myBlacklist.getAvailableLists(undefined,true)
+    console.log(request)
+    console.log(sender)
+    console.log(sendResponse)
 )
 
 chrome.webRequest.onBeforeRedirect.addListener(
