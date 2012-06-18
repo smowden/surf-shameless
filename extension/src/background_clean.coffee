@@ -8,6 +8,27 @@ class MyBlacklist
   customUrls = []
   blacklistKeywords = []
   lastListUpdate = 0
+  readyState = false
+  totalEnabled = 0
+
+  constructor: () ->
+    @init()
+
+  isReady: () ->
+    return readyState
+
+  init: () ->
+    console.log("init...")
+    if localStorage["myAvailableLists"] == "undefined" or localStorage["myAvailableLists"] == undefined
+      @getAvailableLists()
+      setTimeout(
+        =>
+          @init()
+        , 100
+      )
+    else
+      console.log("enabling lists...")
+      @loadEnabledLists()
 
 
   getBlacklist: (type) ->
@@ -17,16 +38,16 @@ class MyBlacklist
       return blacklistKeywords
 
   isBlacklisted: (string, type) ->
-    if type == "url"
-      lookupDir = blacklistUrls if type == "url"
-      lookupDir = blacklistKeywords if type == "keyword"
-      for s in lookupDir
-        if type == "url"
-          if string.indexOf("http://www.#{s}") >= 0 or string.indexOf("http://#{s}") >= 0
-            return true
-        else if type == "keyword"
-          if string.indexOf(s) >= 0
-            return true
+    string = string.toLowerCase()
+    lookupDir = blacklistUrls if type == "url"
+    lookupDir = blacklistKeywords if type == "keyword"
+    for s in lookupDir
+      if type == "url"
+        if string.indexOf("http://www.#{s}") >= 0 or string.indexOf("http://#{s}") >= 0
+          return true
+      else if type == "keyword"
+        if string.indexOf(s) >= 0
+          return true
     false
 
   getAvailableLists: (availableLists, refresh) ->
@@ -34,47 +55,59 @@ class MyBlacklist
       @getLocalFile("lists/_available", @getAvailableLists)
       undefined
     else
-      console.log(availableLists)
       localStorage["myAvailableLists"] = JSON.stringify(availableLists)
 
   loadEnabledLists: () ->
-    enabledLists = JSON.parse(localStorage["enabledLists"]) if localStorage["enabledLists"] != "undefined"
+    if localStorage["enabledLists"] != "undefined" and localStorage["enabledLists"] != undefined
+      console.log("enabledLists check")
+      if localStorage["myAvailableLists"] != "undefined" and localStorage["myAvailableLists"] != undefined
+        console.log("myAvailableLists check")
+        totalEnabled = 0
+        enabledLists = JSON.parse(localStorage["enabledLists"])
+        availableLists = JSON.parse(localStorage["myAvailableLists"])
+        console.log(availableLists)
+        console.log(enabledLists)
+        blacklistUrls = []
+        blacklistKeywords = []
+        for listName, i in availableLists
+          if enabledLists[listName]
+            totalEnabled++
+            console.log("loading list #{listName}")
+            @loadList(undefined, listName, i)
 
-    if enabledLists
-      for listName, enabled in enabledLists
-        if enabled
-          @loadList(undefined, listName)
 
-      lastListUpdate = Date.now()
-
-
-  loadList: (listObject, name) ->
+  loadList: (listObject, name, index) ->
     if not listObject
-      @getLocalFile("lists/#{name}", @loadList)
+      @getLocalFile("lists/#{name}", @loadList, name, index)
     else
-      blacklistUrls.concat(listObject.content) if listObject.type == "urls"
-      blacklistKeywords.concat(listObject.content) if listObject.type == "keywords"
-
-      console.log(blacklistUrls)
-      console.log(blacklistKeywords)
+      if listObject.type == "urls"
+        blacklistUrls = blacklistUrls.concat(listObject.content)
+      else if listObject.type == "keywords"
+        blacklistKeywords = blacklistKeywords.concat(listObject.content)
+      if index == totalEnabled-1
+        readyState = true
 
   reload: () ->
     if localStorage["lastUserUpdate"] >= lastListUpdate
       @loadEnabledLists()
 
   setListState: (name, state) -> #state is true/false for enabled/disabled
-    enabledLists = JSON.parse(localStorage["enabledLists"])
+    if not localStorage["enabledLists"] or localStorage["enabledLists"] == "undefined"
+      enabledLists = {}
+    else
+      enabledLists = JSON.parse(localStorage["enabledLists"])
     if state == true or state == false
       enabledLists[name] = state
     localStorage["enabledLists"] = JSON.stringify(enabledLists)
+    console.log(localStorage["enabledLists"])
     @loadEnabledLists()
 
-  getLocalFile: (path, callback) ->
+  getLocalFile: (path, callback, var1, var2) ->
     xhr = new XMLHttpRequest()
     xhr.open("GET", path, true)
     xhr.onreadystatechange = =>
       if xhr.readyState == 4
-        callback(JSON.parse(xhr.responseText))
+        callback(JSON.parse(xhr.responseText), var1, var2)
     xhr.send()
 
 class WipeMode
@@ -83,20 +116,31 @@ class WipeMode
   firstBadTabTime = undefined
 
   constructor: (@myBlacklist) ->
+    @init()
 
-  tabAdded: (tabId, changeInfo, tab) ->
+  init: () ->
+    if not myBlacklist.isReady()
+      setTimeout(
+        =>
+          @init()
+        , 100
+      )
+    else
+      @wipeHistory(undefined, true)
 
+  tabAdded: (tabId, changeInfo, tab) =>
     currentUrl = tab.url
     if changeInfo.url
       currentUrl = changeInfo.url
 
-    if myBlacklist.isBlacklisted(currentUrl, "url") and openTabs.indexOf(tabId) == -1
+    if (myBlacklist.isBlacklisted(currentUrl, "url") or myBlacklist.isBlacklisted(tab.title, "keyword")) and openTabs.indexOf(tabId) == -1
       firstBadTabTime = (new Date().getTime() - 10000) if not firstBadTabTime
       # ^ the 10 second difference is to make sure we wont miss anything
       openTabs.push(tabId)
       console.log(openTabs)
-    else if not myBlacklist.isBlacklisted(currentUrl, "url") and openTabs.indexOf(tabId) >= 0
+    else if not (myBlacklist.isBlacklisted(currentUrl, "url") or myBlacklist.isBlacklisted(tab.title, "keyword")) and openTabs.indexOf(tabId) >= 0
       @tabClosed(tabId)
+      undefined
 
 
   tabClosed: (tabId) ->
@@ -144,24 +188,32 @@ class WipeMode
       {text: "", startTime: startTime, endTime: endTime, maxResults: maxResults},
       # specifying a text for the search seems to just return completely random results
     (historyItems) =>
+      deleteCount = 0
       for hItem in historyItems
-        if myBlacklist.isBlacklisted(hItem.url, "url")
-          this.purgeBadUrl(hItem.url)
+        if myBlacklist.isBlacklisted(hItem.url, "url") or myBlacklist.isBlacklisted(hItem.title, "keyword")
+          @purgeBadUrl(hItem.url)
+          deleteCount++
+        if hItem.url.indexOf(".google.") >= 0
+          if myBlacklist.isBlacklisted(hItem.url, "keyword") # get rid of nasty google redirects
+            @purgeBadUrl(hItem.url)
+            deleteCount++
 
       for nastyRedirect in badRedirects
         chrome.history.deleteUrl(url: nastyRedirect)
+        deleteCount++
+
+      localStorage["popup_lastCleanupTime"] =  JSON.stringify(new Date)
+      localStorage["popup_cleanupUrlCounter"] =  deleteCount
 
       undefined
     )
     undefined
 
 myBlacklist = new MyBlacklist()
-console.log(myBlacklist)
-myBlacklist.getAvailableLists()
 console.log(myBlacklist.getBlacklist("urls"))
 
 wipeMode = new WipeMode(myBlacklist)
-wipeMode.wipeHistory(undefined, true)
+
 
 
 chrome.tabs.onUpdated.addListener(
@@ -176,12 +228,13 @@ chrome.tabs.onRemoved.addListener(
 chrome.extension.onRequest.addListener(
   (request, sender, sendResponse) ->
     if request.action == "getAvailableLists"
-      console.log("backgroundpage got request")
-      console.log(localStorage["myAvailableLists"])
       myBlacklist.getAvailableLists(undefined,true)
+    else if request.action == "changeListState"
+      myBlacklist.setListState(request.listName, request.listState)
+      console.log(myBlacklist.getBlacklist("urls"))
+      console.log(myBlacklist.getBlacklist("keywords"))
+
     console.log(request)
-    console.log(sender)
-    console.log(sendResponse)
 )
 
 chrome.webRequest.onBeforeRedirect.addListener(
