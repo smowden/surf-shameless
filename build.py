@@ -2,8 +2,8 @@ from os import listdir
 import subprocess
 
 def compile():
-    SOURCE_DIR = "src"
-    TARGET_DIR = "build/"
+    SOURCE_DIR = "extension/src/"
+    TARGET_DIR = "extension/build/"
 
     COFFE_COMPILE_CMD = "coffee -c -o {0} {1}/{2}"
 

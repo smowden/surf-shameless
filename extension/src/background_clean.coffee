@@ -4,7 +4,7 @@
 #############################################
 
 class MyBlacklist
-  blacklistUrls = ["spankwire.com"]
+  blacklistUrls = []
   customUrls = []
   blacklistKeywords = []
   lastListUpdate = 0
