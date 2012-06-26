@@ -8,31 +8,6 @@ showing up in you browser history. In addition to that you can add your own cust
 through the settings page.
 
 
-Behaviour on various OS
-===========
-
-Linux/Chromium (recommended):
-This extension was extensively tested by me on Chromium 18.0.1025.168
-(Developer Build 134367 Linux) Built on Ubuntu 11.10, running on LinuxMint 12
-This is where it works perfect and will not only delete your history but also keep your Omnibox clean
-
-Linux/Chrome:
-On Chrome (tested 19.0.1084.56 Ubuntu) this extension will delete unwanted history items and keep your startpage clean.
-However due to more aggresive Omnibox caching traces of the visits will remain in the Omnibox (not the history)
-form of the pure url (without a title next to it).
-Unfortunately I found no way to remove these traces (within the extension API), they even exist if you block the request
-and redirect it to a incognito window. To delete these you have to either wipe your WHOLE history or follow these instructions:
-http://superuser.com/a/389660
-
-Windows/Chrome:
-Behaves similar to Linux/Chrome, please see above.
-
-OSX/Chrome:
-unfortunately untested, would love to hear some feedback
-
-OSX/Chromium:
-untested but probably similar to Linux/Chromium
-
 Simple install (for nontechnical Users)
 ===========
 * Download this archive: https://github.com/codesuela/embarassment-filter/zipball/master
@@ -66,6 +41,39 @@ To install open Chrome -> Settings
 Check "Developer Mode"
 Click "Load unpacked extension"
 Select the extension folder and click "Open"
+
+
+Behaviour on various OS
+===========
+
+Linux/Chromium (recommended):
+-----------------------
+This extension was extensively tested by me on Chromium 18.0.1025.168
+(Developer Build 134367 Linux) Built on Ubuntu 11.10, running on LinuxMint 12
+This is where it works perfect and will not only delete your history but also keep your Omnibox clean
+
+Linux/Chrome:
+-----------------------
+On Chrome (tested 19.0.1084.56 Ubuntu) this extension will delete unwanted history items and keep your startpage clean.
+However due to more aggresive Omnibox caching traces of the visits will remain in the Omnibox (not the history)
+form of the pure url (without a title next to it).
+Unfortunately I found no way to remove these traces (within the extension API), they even exist if you block the request
+and redirect it to a incognito window. To delete these you have to either wipe your WHOLE history or follow these instructions:
+http://superuser.com/a/389660
+
+Windows/Chrome:
+-----------------------
+Behaves similar to Linux/Chrome, please see above.
+
+OSX/Chrome:
+-----------------------
+unfortunately untested, would love to hear some feedback
+
+OSX/Chromium:
+-----------------------
+untested but probably similar to Linux/Chromium
+
+
 
 Bugs:
 please report bugs via Github, pull requests are also very welcome.
