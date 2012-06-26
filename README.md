@@ -37,10 +37,10 @@ otherwise type this into your shell
 
 Installing:
 -----------
-To install open Chrome -> Settings
-Check "Developer Mode"
-Click "Load unpacked extension"
-Select the extension folder and click "Open"
+* To install open Chrome -> Settings
+* Check "Developer Mode"
+* Click "Load unpacked extension"
+* Select the extension folder and click "Open"
 
 
 Behaviour on various OS
