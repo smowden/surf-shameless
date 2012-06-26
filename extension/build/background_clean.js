@@ -331,6 +331,8 @@
       myBlacklist.getAvailableLists(void 0, true);
     } else if (request.action === "changeListState") {
       myBlacklist.setListState(request.listName, request.listState);
+      myBlacklist.init();
+      wipeMode.wipeHistory(void 0, true);
       console.log(myBlacklist.getBlacklist("urls"));
       console.log(myBlacklist.getBlacklist("keywords"));
     } else if (request.action === "reInit") {
