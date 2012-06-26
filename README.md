@@ -18,7 +18,8 @@ This is where it works perfect and will not only delete your history but also ke
 
 Linux/Chrome:
 On Chrome (tested 19.0.1084.56 Ubuntu) this extension will delete unwanted history items and keep your startpage clean.
-However due to more aggresive caching traces of the visits will remain in form of the pure url (without a title next to it).
+However due to more aggresive Omnibox caching traces of the visits will remain in the Omnibox (not the history)
+form of the pure url (without a title next to it).
 Unfortunately I found no way to remove these traces (within the extension API), they even exist if you block the request
 and redirect it to a incognito window. To delete these you have to either wipe your WHOLE history or follow these instructions:
 http://superuser.com/a/389660
@@ -32,6 +33,14 @@ unfortunately untested, would love to hear some feedback
 OSX/Chromium:
 untested but probably similar to Linux/Chromium
 
+Simple install (for nontechnical Users)
+===========
+* Download this archive: https://github.com/codesuela/embarassment-filter/zipball/master
+* (or click the ZIP button on the top third of this page)
+* Extract the contents to a folder of your choosing
+* skip to the "installing" section
+
+
 Build and install
 ===========
 
@@ -39,9 +48,10 @@ NOTE:
 the latest JS files should be included so if you don't want to build it yourself skip to the "installing" section
 
 Requirements to build:
--node.js
--npm
--Coffeescript
+------------
+* node.js
+* npm
+* Coffeescript
 see: http://coffeescript.org/#installation
 for more info
 
@@ -51,6 +61,7 @@ otherwise type this into your shell
 `coffee -c -o extension/build/ extension/src/`
 
 Installing:
+-----------
 To install open Chrome -> Settings
 Check "Developer Mode"
 Click "Load unpacked extension"
