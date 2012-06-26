@@ -56,7 +56,7 @@ Linux/Chrome:
 -----------------------
 On Chrome (tested 19.0.1084.56 Ubuntu) this extension will delete unwanted history items and keep your startpage clean.
 However due to more aggresive Omnibox caching traces of the visits will remain in the Omnibox (not the history)
-form of the pure url (without a title next to it).
+in form of the pure url (without a title next to it).
 Unfortunately I found no way to remove these traces (within the extension API), they even exist if you block the request
 and redirect it to a incognito window. To delete these you have to either wipe your WHOLE history or follow these instructions:
 http://superuser.com/a/389660
