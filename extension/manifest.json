@@ -1,6 +1,6 @@
 {
     "name": "Embarrassment Filter",
-    "version": "0.0.1",
+    "version": "0.8",
     "manifest_version": 1,
     "description": "This extension saves you from embarrassment",
     "browser_action": {

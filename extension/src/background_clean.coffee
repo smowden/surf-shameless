@@ -3,6 +3,8 @@
 
 #############################################
 
+
+
 class MyBlacklist
   blacklistUrls = []
   customUrls = []
@@ -19,6 +21,7 @@ class MyBlacklist
 
   init: () ->
     console.log("init...")
+    readyState = false
     if localStorage["myAvailableLists"] == "undefined" or localStorage["myAvailableLists"] == undefined
       @getAvailableLists()
       setTimeout(
@@ -58,23 +61,45 @@ class MyBlacklist
       localStorage["myAvailableLists"] = JSON.stringify(availableLists)
 
   loadEnabledLists: () ->
+    blacklistUrls = []
+    blacklistKeywords = []
+
+    if typeof localStorage["myCustomUrlList"] != "undefined" and localStorage["myCustomUrlList"] != "undefined"
+      blacklistUrls = JSON.parse(localStorage["myCustomUrlList"])
+    if typeof localStorage["myCustomKeywordList"] != "undefined" and localStorage["myCustomKeywordList"] != "undefined"
+      blacklistKeywords = JSON.parse(localStorage["myCustomKeywordList"])
     if localStorage["enabledLists"] != "undefined" and localStorage["enabledLists"] != undefined
       console.log("enabledLists check")
       if localStorage["myAvailableLists"] != "undefined" and localStorage["myAvailableLists"] != undefined
+
         console.log("myAvailableLists check")
         totalEnabled = 0
         enabledLists = JSON.parse(localStorage["enabledLists"])
         availableLists = JSON.parse(localStorage["myAvailableLists"])
+
         console.log(availableLists)
         console.log(enabledLists)
-        blacklistUrls = []
-        blacklistKeywords = []
-        for listName, i in availableLists
+
+        enabledListsIndex = 0
+        totalDisabled = 0
+
+        for listName in availableLists
           if enabledLists[listName]
+            enabledListsIndex++
             totalEnabled++
             console.log("loading list #{listName}")
-            @loadList(undefined, listName, i)
+            @loadList(undefined, listName, enabledListsIndex)
+          else
+            totalDisabled++
 
+        if totalEnabled == 0 and totalDisabled > 0
+          readyState = true
+        console.log("end of list enabler")
+
+
+        return true
+
+    readyState = true
 
   loadList: (listObject, name, index) ->
     if not listObject
@@ -84,12 +109,11 @@ class MyBlacklist
         blacklistUrls = blacklistUrls.concat(listObject.content)
       else if listObject.type == "keywords"
         blacklistKeywords = blacklistKeywords.concat(listObject.content)
-      if index == totalEnabled-1
+      console.log(index)
+      console.log(totalEnabled)
+      console.log(index == totalEnabled)
+      if index == totalEnabled
         readyState = true
-
-  reload: () ->
-    if localStorage["lastUserUpdate"] >= lastListUpdate
-      @loadEnabledLists()
 
   setListState: (name, state) -> #state is true/false for enabled/disabled
     if not localStorage["enabledLists"] or localStorage["enabledLists"] == "undefined"
@@ -110,6 +134,8 @@ class MyBlacklist
         callback(JSON.parse(xhr.responseText), var1, var2)
     xhr.send()
 
+
+
 class WipeMode
   openTabs = [] # open tabs are all the tabs whose history should be deleted upon closing all of them
   badRedirects = []
@@ -119,6 +145,7 @@ class WipeMode
     @init()
 
   init: () ->
+    console.log("waiting for readyness")
     if not myBlacklist.isReady()
       setTimeout(
         =>
@@ -153,7 +180,6 @@ class WipeMode
         firstBadTabTime = undefined
 
   purgeBadUrl: (url) ->
-    # todo does not completely delete all traces todo investigate (if used with an existing profile)
     # unfortunately we cant retroactively delete all bad redirects but
     # this should take care of the ordinary www redirects
 
@@ -233,6 +259,9 @@ chrome.extension.onRequest.addListener(
       myBlacklist.setListState(request.listName, request.listState)
       console.log(myBlacklist.getBlacklist("urls"))
       console.log(myBlacklist.getBlacklist("keywords"))
+    else if request.action == "reInit"
+      myBlacklist.init()
+      wipeMode.wipeHistory(undefined, true)
 
     console.log(request)
 )
