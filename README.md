@@ -3,8 +3,9 @@ Description
 
 The embarassment-filter is a Chrome extension that selectively deletes items from you history.
 As of today it comes prepackaged with two lists, one contains medical terms and the other
-porn websites. Once you enabled the extension will delete existing items and protect you from new items
-showing up in you browser history. In addition to that you can add your own custom keywords and websites
+porn websites. Once you enabled the extension will delete existing items that match the urls/keywords
+on the enabled lists and protect you from new unwanted entries your browser history.
+In addition to that you can add your own custom keywords and websites
 through the settings page.
 
 
