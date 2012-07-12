@@ -1,6 +1,6 @@
 # todo on first run flush the cache or delete "History Provider Cache" in user folder AND archived history
 # todo credit pixture for the icon ( http://www.pixture.com/drupal/ )
-
+# todo build better/custom localstorage handler
 #############################################
 
 
@@ -46,7 +46,7 @@ class MyBlacklist
     lookupDir = blacklistKeywords if type == "keyword"
     for s in lookupDir
       if type == "url"
-        if string.indexOf("http://www.#{s}") >= 0 or string.indexOf("http://#{s}") >= 0
+        if string.indexOf("http://www.#{s}") >= 0 or string.indexOf("http://#{s}") >= 0 or string.indexOf("https://#{s}") >= 0
           return true
       else if type == "keyword"
         if string.indexOf(s) >= 0
@@ -182,6 +182,7 @@ class WipeMode
   purgeBadUrl: (url) ->
     # unfortunately we cant retroactively delete all bad redirects but
     # this should take care of the ordinary www redirects
+    # todo add https deletion!
 
     if url.indexOf("http") == -1
       url = "http://#{url}"
