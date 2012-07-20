@@ -86,7 +86,7 @@ $(
       else if type == "keyword"
         customListName = "myCustomKeywordList"
 
-      if localStorage[customListName] == "undefined" or typeof(localStorage[customListName]) == "undefined" or localStorage[customListName] == undefined
+      if localStorage[customListName] == "undefined" or typeof localStorage[customListName] == "undefined" or localStorage[customListName] == undefined
         myCustomList = []
       else
         myCustomList = JSON.parse(localStorage[customListName])

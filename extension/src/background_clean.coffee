@@ -5,30 +5,72 @@
 
 
 
+
+
+
+
 class MyBlacklist
-  blacklistUrls = []
-  customUrls = []
-  blacklistKeywords = []
-  lastListUpdate = 0
-  readyState = false
+  readyState: false
+
   totalEnabled = 0
+  blacklistKeywords = [] # once initialized these two variables will contain all the blacklisted keywords and urls
+  blacklistUrls = []
+
+  settings =
+    myAvailableLists: undefined
+    enabledLists: {}
+    lastListUpdate: undefined
+
+    myCustomUrlList: () ->
+      customUrls = JSON.parse(localStorage["myCustomUrlList"])
+      if typeof customUrls == "object"
+        return customUrls
+      []
+
+    myCustomKeywordList: () ->
+      customKeywords = JSON.parse(localStorage["myCustomKeywordList"])
+      if typeof customKeywords == "object"
+        return customKeywords
+      []
 
   constructor: () ->
     @init()
 
-  isReady: () ->
-    return readyState
+
+  loadSettings: () ->
+    storedSettings = JSON.parse(localStorage["efSettings"])
+    if storedSettings != undefined and storedSettings != "undefined"
+      return settings
+    return undefined
+
+  saveSettings: () ->
+    localStorage["efSettings"] = JSON.stringify(settings)
 
   init: () ->
+    ###
+    as the name init suggestst this method (re)initializes the blacklist
+    this means it populates the blacklistKeywords and blacklistUrls with the user defined keywords and urls
+    and then proceeds to join them with the lists that the user enabled
+    once initialization is done readyState is true
+    ###
+
     console.log("init...")
-    readyState = false
-    if localStorage["myAvailableLists"] == "undefined" or localStorage["myAvailableLists"] == undefined
+
+    storedSettings = @loadSettings()
+    settings = storedSettings if storedSettings != undefined
+
+    blacklistKeywords = settings.myCustomKeywordList()
+    blacklistUrls = settings.myCustomUrlList()
+
+    @readyState = false
+    if settings.myAvailableLists == undefined
       @getAvailableLists()
       setTimeout(
         =>
           @init()
         , 100
       )
+
     else
       console.log("enabling lists...")
       @loadEnabledLists()
@@ -44,6 +86,7 @@ class MyBlacklist
     string = string.toLowerCase()
     lookupDir = blacklistUrls if type == "url"
     lookupDir = blacklistKeywords if type == "keyword"
+
     for s in lookupDir
       if type == "url"
         if string.indexOf("http://www.#{s}") >= 0 or string.indexOf("http://#{s}") >= 0 or string.indexOf("https://#{s}") >= 0
@@ -53,38 +96,28 @@ class MyBlacklist
           return true
     false
 
-  getAvailableLists: (availableLists, refresh) ->
-    if (localStorage["myAvailableLists"] == "undefined" and not availableLists) or refresh
+  getAvailableLists: (availableLists, refresh) =>
+    if (settings.myAvailableLists == undefined and not availableLists) or refresh
       @getLocalFile("lists/_available", @getAvailableLists)
       undefined
     else
-      localStorage["myAvailableLists"] = JSON.stringify(availableLists)
+      settings.myAvailableLists = availableLists
+      @saveSettings()
 
   loadEnabledLists: () ->
-    blacklistUrls = []
-    blacklistKeywords = []
-
-    if typeof localStorage["myCustomUrlList"] != "undefined" and localStorage["myCustomUrlList"] != "undefined"
-      blacklistUrls = JSON.parse(localStorage["myCustomUrlList"])
-    if typeof localStorage["myCustomKeywordList"] != "undefined" and localStorage["myCustomKeywordList"] != "undefined"
-      blacklistKeywords = JSON.parse(localStorage["myCustomKeywordList"])
-    if localStorage["enabledLists"] != "undefined" and localStorage["enabledLists"] != undefined
+    if settings.enabledLists
       console.log("enabledLists check")
-      if localStorage["myAvailableLists"] != "undefined" and localStorage["myAvailableLists"] != undefined
-
+      if settings.myAvailableLists
         console.log("myAvailableLists check")
         totalEnabled = 0
-        enabledLists = JSON.parse(localStorage["enabledLists"])
-        availableLists = JSON.parse(localStorage["myAvailableLists"])
-
-        console.log(availableLists)
-        console.log(enabledLists)
+        console.log(settings.myAvailableLists)
+        console.log(settings.myAvailableLists)
 
         enabledListsIndex = 0
         totalDisabled = 0
 
-        for listName in availableLists
-          if enabledLists[listName]
+        for listName in settings.myAvailableLists
+          if settings.enabledLists[listName]
             enabledListsIndex++
             totalEnabled++
             console.log("loading list #{listName}")
@@ -93,13 +126,13 @@ class MyBlacklist
             totalDisabled++
 
         if totalEnabled == 0 and totalDisabled > 0
-          readyState = true
+          @readyState = true
         console.log("end of list enabler")
 
 
         return true
 
-    readyState = true
+    @readyState = true
 
   loadList: (listObject, name, index) ->
     if not listObject
@@ -113,17 +146,13 @@ class MyBlacklist
       console.log(totalEnabled)
       console.log(index == totalEnabled)
       if index == totalEnabled
-        readyState = true
+        @readyState = true
 
   setListState: (name, state) -> #state is true/false for enabled/disabled
-    if not localStorage["enabledLists"] or localStorage["enabledLists"] == "undefined"
-      enabledLists = {}
-    else
-      enabledLists = JSON.parse(localStorage["enabledLists"])
-    if state == true or state == false
-      enabledLists[name] = state
-    localStorage["enabledLists"] = JSON.stringify(enabledLists)
-    console.log(localStorage["enabledLists"])
+    if typeof state == "boolean"
+      settings.enabledLists[name] = state
+    @saveSettings()
+    console.log(settings.enabledLists)
     @loadEnabledLists()
 
   getLocalFile: (path, callback, var1, var2) ->
@@ -146,7 +175,7 @@ class WipeMode
 
   init: () ->
     console.log("waiting for readyness")
-    if not myBlacklist.isReady()
+    if not myBlacklist.readyState
       setTimeout(
         =>
           @init()
@@ -155,6 +184,11 @@ class WipeMode
     else
       @wipeHistory(undefined, true)
 
+  ###
+  tabAdded, tabClosed and onRedirect keep track of whether blacklisted urls are currently open
+  or whether redirects to blacklisted sites occured
+  once all tabs with blacklisted urls are closed the history will be cleaned out
+  ###
   tabAdded: (tabId, changeInfo, tab) =>
     currentUrl = tab.url
     if changeInfo.url
@@ -179,27 +213,38 @@ class WipeMode
         @wipeHistory(firstBadTabTime)
         firstBadTabTime = undefined
 
-  purgeBadUrl: (url) ->
-    # unfortunately we cant retroactively delete all bad redirects but
-    # this should take care of the ordinary www redirects
-    # todo add https deletion!
-
-    if url.indexOf("http") == -1
-      url = "http://#{url}"
-
-    chrome.history.deleteUrl({url: url})
-    if url.indexOf("www") >= 0
-      chrome.history.deleteUrl({url: url.replace("http://www.", "http://")})
-      console.log("purged #{url.replace("http://www.", "http://")}")
-    else
-      chrome.history.deleteUrl({url: url.replace("http://", "http://www.")})
-      console.log("purged #{url.replace("http://", "http://www.")}")
 
   onRedirect: (details) ->
     if myBlacklist.isBlacklisted(details.redirectUrl, "url") and badRedirects.indexOf(details.redirectUrl)
       badRedirects.push(details.url)
       console.log(badRedirects)
     undefined
+
+  purgeBadUrl: (url) ->
+    ###
+    if we just delete the url the item will disappear from the history but a www. prefixed
+    version will still show up in the omnibox so and the other way round
+    therefore we need to make sure that both types of urls are deleted
+    ###
+
+    if url.indexOf("http") == -1
+      ###
+      if the url comes from a list and WipeMode is initialized it will only
+      consist of domain.tld so we need to prefix it with the proper possible schemes
+      otherwise it won't be deleted
+      ###
+      url = "http://#{url}"
+      httpsUrl = "https://#{url}"
+
+    chrome.history.deleteUrl({url: url})
+    chrome.history.deleteUrl({url: httpsUrl}) if httpsUrl
+
+    if url.indexOf("www") >= 0
+      chrome.history.deleteUrl({url: url.replace("http://www.", "http://")})
+      console.log("purged #{url.replace("http://www.", "http://")}")
+    else
+      chrome.history.deleteUrl({url: url.replace("http://", "http://www.")})
+      console.log("purged #{url.replace("http://", "http://www.")}")
 
   wipeHistory: (startTime, doFullClean) ->
 

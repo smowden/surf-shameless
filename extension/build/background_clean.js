@@ -4,33 +4,68 @@
     __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; };
 
   MyBlacklist = (function() {
-    var blacklistKeywords, blacklistUrls, customUrls, lastListUpdate, readyState, totalEnabled;
+    var blacklistKeywords, blacklistUrls, settings, totalEnabled;
 
-    blacklistUrls = [];
-
-    customUrls = [];
-
-    blacklistKeywords = [];
-
-    lastListUpdate = 0;
-
-    readyState = false;
+    MyBlacklist.prototype.readyState = false;
 
     totalEnabled = 0;
 
+    blacklistKeywords = [];
+
+    blacklistUrls = [];
+
+    settings = {
+      myAvailableLists: void 0,
+      enabledLists: {},
+      lastListUpdate: void 0,
+      myCustomUrlList: function() {
+        var customUrls;
+        customUrls = JSON.parse(localStorage["myCustomUrlList"]);
+        if (typeof customUrls === "object") {
+          return customUrls;
+        }
+        return [];
+      },
+      myCustomKeywordList: function() {
+        var customKeywords;
+        customKeywords = JSON.parse(localStorage["myCustomKeywordList"]);
+        if (typeof customKeywords === "object") {
+          return customKeywords;
+        }
+        return [];
+      }
+    };
+
     function MyBlacklist() {
+      this.getAvailableLists = __bind(this.getAvailableLists, this);
       this.init();
     }
 
-    MyBlacklist.prototype.isReady = function() {
-      return readyState;
+    MyBlacklist.prototype.loadSettings = function() {
+      var storedSettings;
+      storedSettings = JSON.parse(localStorage["efSettings"]);
+      if (storedSettings !== void 0 || storedSettings !== void 0) {
+        return settings;
+      }
+      return void 0;
+    };
+
+    MyBlacklist.prototype.saveSettings = function() {
+      return localStorage["efSettings"] = JSON.stringify(settings);
     };
 
     MyBlacklist.prototype.init = function() {
-      var _this = this;
+      var storedSettings,
+        _this = this;
       console.log("init...");
-      readyState = false;
-      if (localStorage["myAvailableLists"] === "undefined" || localStorage["myAvailableLists"] === void 0) {
+      storedSettings = this.loadSettings();
+      if (storedSettings !== void 0) {
+        settings = storedSettings;
+      }
+      blacklistKeywords = settings.myCustomKeywordList();
+      blacklistUrls = settings.myCustomUrlList();
+      this.readyState = false;
+      if (settings.myAvailableLists === void 0) {
         this.getAvailableLists();
         return setTimeout(function() {
           return _this.init();
@@ -61,7 +96,7 @@
       for (_i = 0, _len = lookupDir.length; _i < _len; _i++) {
         s = lookupDir[_i];
         if (type === "url") {
-          if (string.indexOf("http://www." + s) >= 0 || string.indexOf("http://" + s) >= 0) {
+          if (string.indexOf("http://www." + s) >= 0 || string.indexOf("http://" + s) >= 0 || string.indexOf("https://" + s) >= 0) {
             return true;
           }
         } else if (type === "keyword") {
@@ -74,38 +109,30 @@
     };
 
     MyBlacklist.prototype.getAvailableLists = function(availableLists, refresh) {
-      if ((localStorage["myAvailableLists"] === "undefined" && !availableLists) || refresh) {
+      if ((settings.myAvailableLists === void 0 && !availableLists) || refresh) {
         this.getLocalFile("lists/_available", this.getAvailableLists);
         return void 0;
       } else {
-        return localStorage["myAvailableLists"] = JSON.stringify(availableLists);
+        settings.myAvailableLists = availableLists;
+        return this.saveSettings();
       }
     };
 
     MyBlacklist.prototype.loadEnabledLists = function() {
-      var availableLists, enabledLists, enabledListsIndex, listName, totalDisabled, _i, _len;
-      blacklistUrls = [];
-      blacklistKeywords = [];
-      if (typeof localStorage["myCustomUrlList"] !== "undefined" && localStorage["myCustomUrlList"] !== "undefined") {
-        blacklistUrls = JSON.parse(localStorage["myCustomUrlList"]);
-      }
-      if (typeof localStorage["myCustomKeywordList"] !== "undefined" && localStorage["myCustomKeywordList"] !== "undefined") {
-        blacklistKeywords = JSON.parse(localStorage["myCustomKeywordList"]);
-      }
-      if (localStorage["enabledLists"] !== "undefined" && localStorage["enabledLists"] !== void 0) {
+      var enabledListsIndex, listName, totalDisabled, _i, _len, _ref;
+      if (settings.enabledLists) {
         console.log("enabledLists check");
-        if (localStorage["myAvailableLists"] !== "undefined" && localStorage["myAvailableLists"] !== void 0) {
+        if (settings.myAvailableLists) {
           console.log("myAvailableLists check");
           totalEnabled = 0;
-          enabledLists = JSON.parse(localStorage["enabledLists"]);
-          availableLists = JSON.parse(localStorage["myAvailableLists"]);
-          console.log(availableLists);
-          console.log(enabledLists);
+          console.log(settings.myAvailableLists);
+          console.log(settings.myAvailableLists);
           enabledListsIndex = 0;
           totalDisabled = 0;
-          for (_i = 0, _len = availableLists.length; _i < _len; _i++) {
-            listName = availableLists[_i];
-            if (enabledLists[listName]) {
+          _ref = settings.myAvailableLists;
+          for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+            listName = _ref[_i];
+            if (settings.enabledLists[listName]) {
               enabledListsIndex++;
               totalEnabled++;
               console.log("loading list " + listName);
@@ -115,13 +142,13 @@
             }
           }
           if (totalEnabled === 0 && totalDisabled > 0) {
-            readyState = true;
+            this.readyState = true;
           }
           console.log("end of list enabler");
           return true;
         }
       }
-      return readyState = true;
+      return this.readyState = true;
     };
 
     MyBlacklist.prototype.loadList = function(listObject, name, index) {
@@ -137,23 +164,17 @@
         console.log(totalEnabled);
         console.log(index === totalEnabled);
         if (index === totalEnabled) {
-          return readyState = true;
+          return this.readyState = true;
         }
       }
     };
 
     MyBlacklist.prototype.setListState = function(name, state) {
-      var enabledLists;
-      if (!localStorage["enabledLists"] || localStorage["enabledLists"] === "undefined") {
-        enabledLists = {};
-      } else {
-        enabledLists = JSON.parse(localStorage["enabledLists"]);
-      }
       if (state === true || state === false) {
-        enabledLists[name] = state;
+        settings.enabledLists[name] = state;
       }
-      localStorage["enabledLists"] = JSON.stringify(enabledLists);
-      console.log(localStorage["enabledLists"]);
+      this.saveSettings();
+      console.log(settings.enabledLists);
       return this.loadEnabledLists();
     };
 
@@ -193,7 +214,7 @@
     WipeMode.prototype.init = function() {
       var _this = this;
       console.log("waiting for readyness");
-      if (!myBlacklist.isReady()) {
+      if (!myBlacklist.readyState) {
         return setTimeout(function() {
           return _this.init();
         }, 100);
