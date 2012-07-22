@@ -13,34 +13,34 @@ class MyBlacklist
   readyState: false
 
   totalEnabled = 0
-  blacklistKeywords = [] # once initialized these two variables will contain all the blacklisted keywords and urls
-  blacklistUrls = []
+  customBlacklist = undefined
 
   settings =
     myAvailableLists: undefined
     enabledLists: {}
     lastListUpdate: undefined
 
-    myCustomUrlList: () ->
-      customUrls = JSON.parse(localStorage["myCustomUrlList"])
-      if typeof customUrls == "object"
-        return customUrls
-      []
-
-    myCustomKeywordList: () ->
-      customKeywords = JSON.parse(localStorage["myCustomKeywordList"])
-      if typeof customKeywords == "object"
-        return customKeywords
-      []
 
   constructor: () ->
     @init()
 
+  getCustomLists: () ->
+    lists =
+      keywords: []
+      urls: []
+
+    if localStorage["myCustomKeywordList"] != "undefined" and typeof localStorage["myCustomKeywordList"] != "undefined"
+      lists.keywords = JSON.parse(localStorage["myCustomKeywordList"])
+
+    if localStorage["myCustomUrlList"] != "undefined" and typeof localStorage["myCustomUrlList"] != "undefined"
+      lists.urls = JSON.parse(localStorage["myCustomUrlList"])
+
+    lists
 
   loadSettings: () ->
-    storedSettings = JSON.parse(localStorage["efSettings"])
-    if storedSettings != undefined and storedSettings != "undefined"
-      return settings
+    if localStorage["efSettings"] != undefined and localStorage["efSettings"] != "undefined"
+      storedSettings = JSON.parse(localStorage["efSettings"])
+      return storedSettings
     return undefined
 
   saveSettings: () ->
@@ -59,8 +59,8 @@ class MyBlacklist
     storedSettings = @loadSettings()
     settings = storedSettings if storedSettings != undefined
 
-    blacklistKeywords = settings.myCustomKeywordList()
-    blacklistUrls = settings.myCustomUrlList()
+    console.log(settings)
+    customBlacklist = @getCustomLists()
 
     @readyState = false
     if settings.myAvailableLists == undefined
@@ -76,16 +76,13 @@ class MyBlacklist
       @loadEnabledLists()
 
 
-  getBlacklist: (type) ->
-    if type == "urls"
-      return blacklistUrls
-    else
-      return blacklistKeywords
+  getBlacklist: () ->
+    customBlacklist
 
   isBlacklisted: (string, type) ->
     string = string.toLowerCase()
-    lookupDir = blacklistUrls if type == "url"
-    lookupDir = blacklistKeywords if type == "keyword"
+    lookupDir = customBlacklist.urls if type == "url"
+    lookupDir = customBlacklist.keywords if type == "keyword"
 
     for s in lookupDir
       if type == "url"
@@ -104,14 +101,14 @@ class MyBlacklist
       settings.myAvailableLists = availableLists
       @saveSettings()
 
-  loadEnabledLists: () ->
+  loadEnabledLists: () =>
     if settings.enabledLists
       console.log("enabledLists check")
       if settings.myAvailableLists
         console.log("myAvailableLists check")
         totalEnabled = 0
         console.log(settings.myAvailableLists)
-        console.log(settings.myAvailableLists)
+        console.log(settings.enabledLists)
 
         enabledListsIndex = 0
         totalDisabled = 0
@@ -134,17 +131,15 @@ class MyBlacklist
 
     @readyState = true
 
-  loadList: (listObject, name, index) ->
+  loadList: (listObject, name, index) =>
     if not listObject
       @getLocalFile("lists/#{name}", @loadList, name, index)
     else
       if listObject.type == "urls"
-        blacklistUrls = blacklistUrls.concat(listObject.content)
+        customBlacklist.urls = customBlacklist.urls.concat(listObject.content)
       else if listObject.type == "keywords"
-        blacklistKeywords = blacklistKeywords.concat(listObject.content)
-      console.log(index)
-      console.log(totalEnabled)
-      console.log(index == totalEnabled)
+        customBlacklist.keywords = customBlacklist.keywords.concat(listObject.content)
+      console.log(customBlacklist)
       if index == totalEnabled
         @readyState = true
 
@@ -152,7 +147,7 @@ class MyBlacklist
     if typeof state == "boolean"
       settings.enabledLists[name] = state
     @saveSettings()
-    console.log(settings.enabledLists)
+    console.log("enabled lists", settings.enabledLists)
     @loadEnabledLists()
 
   getLocalFile: (path, callback, var1, var2) ->
@@ -166,7 +161,7 @@ class MyBlacklist
 
 
 class WipeMode
-  openTabs = [] # open tabs are all the tabs whose history should be deleted upon closing all of them
+  openTabs = [] # openTabs is a list of all the tabs whose history should be deleted upon closing all of them
   badRedirects = []
   firstBadTabTime = undefined
 
@@ -252,7 +247,8 @@ class WipeMode
     endTime = new Date().getTime()
 
     if doFullClean
-      for site in myBlacklist.getBlacklist("urls")
+      console.log(myBlacklist.getBlacklist())
+      for site in myBlacklist.getBlacklist().urls
         @purgeBadUrl(site)
 
     maxResults = 1000000000

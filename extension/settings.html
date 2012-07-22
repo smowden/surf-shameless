@@ -3,6 +3,9 @@
     <title></title>
     <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js"></script>
     <script type="text/javascript" src="build/settings.js"></script>
+    <script type="text/javascript" src="jquery-ui-1.8.21.custom.min.js"></script>
+    <link rel="stylesheet" type="text/css" href="css/settings.css" />
+    <link rel="stylesheet" type="text/css" href="css/jquery-ui-1.8.21.custom.css" />
 </head>
 <style type="text/css">
     table {
@@ -10,47 +13,64 @@
     }
 </style>
 <body>
-<div style="width:950px; margin:auto" id="main">
+<div id="body_wrapper">
+    <div id="nav_tabs" class="ui-tabs ui-widget ui-widget-content ui-corner-all">
+        <ul class="ui-tabs-nav ui-helper-reset ui-helper-clearfix ui-widget-header ui-corner-all">
+            <li class="ui-state-default ui-corner-top ui-tabs-selected ui-state-active">
+                <a href="#my_urls_tab">My specified urls</a>
+            </li>
+            <li class="ui-state-default ui-corner-top ui-tabs-selected ui-state-active">
+                <a href="#my_keywords_tab">My specified keywords</a>
+            </li>
+            <li class="ui-state-default ui-corner-top ui-tabs-selected ui-state-active">
+                <a href="#predefined_lists_tab">Predefined lists</a>
+            </li>
+        </ul>
+        <div id="my_urls_tab">
+            <h2>Add new URL</h2>
+            <p>
+                Write the whole url for a specific page or just the domain to filter all domain specific URLS
+            </p>
+            <table border="1" id="my_urls">
+                <tbody></tbody>
+                <tfoot>
+                <tr>
+                    <td colspan="2">
+                        <input type="text" id="new_url_add">
+                        <label for="new_url_add">Add new URL</label>
+                        <input type="submit" id="add_new_url">
+                    </td>
+                </tr>
+                </tfoot>
+            </table>
+        </div>
+        <div id="my_keywords_tab">
+            <h2>Add new Keyword</h2>
+            <p>
+                write a keyword to insert it your personal ones
+            </p>
+            <table border="1" id="my_keywords">
+                <tbody></tbody>
+                <tfoot>
+                <tr>
+                    <td colspan="2">
 
-<h2>Add new Keyword</h2>
-    <p>
-        write a keyword to insert it your personal ones
-    </p>
-<table border="1" id="my_keywords">
-    <tbody></tbody>
-    <tfoot>
-    <tr>
-        <td colspan="2">
+                        <input type="text" id="new_keyword_add">
+                        <label for="new_keyword_add">Add new keyword</label>
+                        <input type="submit" id="add_new_keyword">
+                    </td>
+                </tr>
+                </tfoot>
+            </table>
+        </div>
+        <div id="predefined_lists_tab">
+            <h2>Predefined Lists</h2>
+            <table id="selected_lists" border="1">
+                <tbody></tbody>
+            </table>
+        </div>
+    </div>
 
-            <input type="text" id="new_keyword_add">
-            <label for="new_keyword_add">Add new keyword</label>
-            <input type="submit" id="add_new_keyword">
-        </td>
-    </tr>
-    </tfoot>
-</table>
-<p></p>
-<h2>Add new URL</h2>
-    <p>
-        Write the whole url for a specific page or just the domain to filter all domain specific URLS
-    </p>
-<table border="1" id="my_urls">
-    <tbody></tbody>
-    <tfoot>
-    <tr>
-        <td colspan="2">
-            <input type="text" id="new_url_add">
-            <label for="new_url_add">Add new URL</label>
-            <input type="submit" id="add_new_url">
-        </td>
-    </tr>
-    </tfoot>
-</table>
-<p></p>
- <h2>Predefined Lists</h2>
-<table id="selected_lists" border="1" style="border: #000 solid 1px; width: 900px">
-    <tbody></tbody>
-</table>
 </div>
 </body>
 </html>

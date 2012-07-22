@@ -3,8 +3,7 @@ $(
   ->
 
     loadAvailableLists = () ->
-      console.log(localStorage["myAvailableLists"])
-      if (localStorage["myAvailableLists"]) == "undefined" or typeof localStorage["myAvailableLists"] == "undefined"
+      if localStorage["efSettings"] == "undefined" or typeof localStorage["efSettings"] == "undefined"
         console.log("set timeout")
         chrome.extension.sendRequest({"action": "getAvailableLists"}, (response) -> console.log("response", response) )
         setTimeout(
@@ -16,19 +15,16 @@ $(
         listInitializer()
 
     changeListState = (name, state) ->
-      chrome.extension.sendRequest({"action": "changeListState", "listName": name, "listState": state},
-      (response) -> console.log(response) )
+      chrome.extension.sendRequest({"action": "changeListState", "listName": name, "listState": state})
 
-
-    BlacklistReInit = () ->
-      chrome.extension.sendRequest({"action": "reInit"},
-      (response) -> console.log(response) )
+    blacklistReInit = () ->
+      chrome.extension.sendRequest({"action": "reInit"})
 
     listInitializer = () ->
+      settings = JSON.parse(localStorage["efSettings"])
       xhr = new XMLHttpRequest()
       console.log("list initializer start")
-      enabledLists = JSON.parse(localStorage["enabledLists"]) if localStorage["enabledLists"] != undefined
-      for name in JSON.parse(localStorage["myAvailableLists"])
+      for name in settings.myAvailableLists
         xhrs = {}
         xhr.open("GET", "lists/#{name}", false)
         xhr.onreadystatechange = ->
@@ -37,26 +33,47 @@ $(
             checked = ""
 
             state = false
-            if enabledLists
-              state = enabledLists[name]
+            if settings.enabledLists
+              state = settings.enabledLists[name]
               checked = "checked='checked'" if state
             console.log(listObj)
-            tr = $("<tr></tr>")
+
+
+
+            descTr =  $("<tr></tr>")
             checkbox = $("<td><input type='checkbox' class='list' name='n_#{name}' list_name='#{name}' #{checked}/> <label for='n_#{name}'>#{listObj.name}</label></td> ")
             desc = $("<td><div id='desc_#{name}'>#{listObj.description}</div></td>")
-            urls = $("<td><div id='urls_#{name}' class='urls'> #{listObj.content.join("<br />")} </div></td>")
-            row = tr.append(checkbox).append(desc).append(urls)
-            console.log(row)
-            $('#selected_lists > tbody:last').append(row);
+            descRow = descTr.append(checkbox).append(desc)
+
+            detailTr = $("<tr></tr>")
+            detailCols = []
+            curCol = 0
+            for url in listObj.content
+              if detailCols[curCol] == undefined
+                detailCols[curCol] = []
+              detailCols[curCol].push(url)
+              curCol++
+              curCol = 0 if curCol == 4
+
+            colsHtml = $("<div id='urls_#{name}' class='urls'></div>")
+            toggleBtn = $("""<div class='toggle_urls_btn'>
+                              <a href='#'>
+                                <img src='images/show.png' class='toggle_urls_icon' />
+                                <span class='toggle_urls_caption'>Show list contents</span>
+                              </a>
+                            </div>""")
+            colsHtml.append(toggleBtn)
+            for col in detailCols
+              urlColumn = "<div class='urls_column'>#{col.join('<br />')}</div>"
+              colsHtml.append(urlColumn)
+
+            urls = $("<td colspan='2'></td>").append(colsHtml)
+            detailRow = detailTr.append(urls)
+
+            $('#selected_lists > tbody:last').append(descRow)
+            $('#selected_lists > tbody:last').append(detailRow)
         xhr.send()
     loadAvailableLists()
-
-
-    $(".list").live("change", ->
-      state = $(@).is(':checked')
-      changeListState($(@).attr('list_name'), state)
-    )
-
 
     # custom list stuff
     getCustomList = (type) ->
@@ -71,7 +88,12 @@ $(
 
       if localStorage[customListName] != "undefined" and typeof(localStorage[customListName]) != "undefined" and localStorage[customListName] != undefined
         for item in JSON.parse(localStorage[customListName])
-          td = $("<td><a class='remove_#{type}_item' href='javascript:void(0)'>#{item}</a>  [click to remove] </td>")
+          td = $("""<td>
+                      <span class='url'>#{item}</span>
+                      <a class='remove_#{type}_item' href='javascript:void(0)'>
+                        <img src='images/delete.png' />
+                      </a>
+                    </td>""")
           destination.append(td)
       undefined
 
@@ -80,7 +102,6 @@ $(
     getCustomList("keyword")
 
     customListAdd = (string, type) ->
-
       if type == "url"
         customListName = "myCustomUrlList"
       else if type == "keyword"
@@ -93,7 +114,7 @@ $(
       myCustomList.push(string.replace("http://", "").replace("www.", ""))
       localStorage[customListName] = JSON.stringify(myCustomList)
 
-      BlacklistReInit()
+      blacklistReInit()
 
 
     customListRemove = (string, type) ->
@@ -113,14 +134,21 @@ $(
         else
           localStorage[customListName] = undefined
 
-      BlacklistReInit()
+      blacklistReInit()
 
 
 
+    $('#nav_tabs').tabs()
 
     $('.remove_url_item').live('click', ->
       customListRemove($(this).text(), "url")
       $(this).parent().remove()
+    )
+
+
+    $(".list").live("change", ->
+      state = $(@).is(':checked')
+      changeListState($(@).attr('list_name'), state)
     )
 
     $('.remove_keyword_item').live('click', ->
@@ -145,4 +173,14 @@ $(
       getCustomList("keyword")
     )
 
+    $('.toggle_urls_btn a').toggle(
+      ->
+        $(@).parent().parent().children(".urls_column").slideDown()
+        $(".toggle_urls_icon", @).attr("src", "images/hide.png")
+        $(".toggle_urls_caption", @).text("Hide list contents")
+      , ->
+        $(@).parent().parent().children(".urls_column").slideUp()
+        $(".toggle_urls_icon", @).attr("src", "images/show.png")
+        $(".toggle_urls_caption", @).text("Show list contents")
+    )
 )

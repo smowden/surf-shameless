@@ -1,0 +1,19 @@
+.urls_column{
+    float: left;
+    width: 210px;
+    display: none;
+}
+
+.toggle_urls_btn{
+    text-align: center;
+}
+
+.toggle_urls_btn a{
+    text-decoration: none;
+    color: #000;
+}
+
+#body_wrapper{
+    width: 800px;
+    margin: 0 auto;
+}
