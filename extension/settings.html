@@ -3,7 +3,7 @@
     <title></title>
     <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js"></script>
     <script type="text/javascript" src="build/settings.js"></script>
-    <script type="text/javascript" src="jquery-ui-1.8.21.custom.min.js"></script>
+    <script type="text/javascript" src="js/jquery-ui-1.8.21.custom.min.js"></script>
     <link rel="stylesheet" type="text/css" href="css/settings.css" />
     <link rel="stylesheet" type="text/css" href="css/jquery-ui-1.8.21.custom.css" />
 </head>
@@ -13,7 +13,19 @@
     }
 </style>
 <body>
+<div id="lockdown">
+    <h1>
+        Please enter your password
+    </h1>
+    <input type="text" id="lockdown_password" />
+</div>
 <div id="body_wrapper">
+    <h1>
+        Embarrassment filter
+    </h1>
+    <h3>
+        Browse through the tabs to setup your settings
+    </h3>
     <div id="nav_tabs" class="ui-tabs ui-widget ui-widget-content ui-corner-all">
         <ul class="ui-tabs-nav ui-helper-reset ui-helper-clearfix ui-widget-header ui-corner-all">
             <li class="ui-state-default ui-corner-top ui-tabs-selected ui-state-active">
@@ -24,6 +36,9 @@
             </li>
             <li class="ui-state-default ui-corner-top ui-tabs-selected ui-state-active">
                 <a href="#predefined_lists_tab">Predefined lists</a>
+            </li>
+            <li class="ui-state-default ui-corner-top ui-tabs-selected ui-state-active">
+                <a href="#change_password">Change your password</a>
             </li>
         </ul>
         <div id="my_urls_tab">
@@ -68,6 +83,12 @@
             <table id="selected_lists" border="1">
                 <tbody></tbody>
             </table>
+        </div>
+        <div id="change_password">
+            <h2>
+                Change your password
+            </h2>
+
         </div>
     </div>
 
