@@ -85,7 +85,6 @@
       }
       return _results;
     };
-    loadAvailableLists();
     getCustomList = function(type) {
       var customListName, destination, item, td, _i, _len, _ref;
       console.log("get custom list called");
@@ -107,8 +106,6 @@
       }
       return;
     };
-    getCustomList("url");
-    getCustomList("keyword");
     customListAdd = function(string, type) {
       var customListName, myCustomList;
       if (type === "url") {
@@ -180,7 +177,7 @@
       $("#my_keywords tbody").html("");
       return getCustomList("keyword");
     });
-    return $('.toggle_urls_btn a').toggle(function() {
+    $('.toggle_urls_btn a').toggle(function() {
       $(this).parent().parent().children(".urls_column").slideDown();
       $(".toggle_urls_icon", this).attr("src", "images/hide.png");
       return $(".toggle_urls_caption", this).text("Hide list contents");
@@ -188,6 +185,16 @@
       $(this).parent().parent().children(".urls_column").slideUp();
       $(".toggle_urls_icon", this).attr("src", "images/show.png");
       return $(".toggle_urls_caption", this).text("Show list contents");
+    });
+    return $('#lockdown_password').keyup(function() {
+      console.log($(this).val());
+      if ($(this).val() === "password") {
+        loadAvailableLists();
+        getCustomList("url");
+        getCustomList("keyword");
+        $("#body_wrapper").show();
+        return $("#lockdown").hide();
+      }
     });
   });
 

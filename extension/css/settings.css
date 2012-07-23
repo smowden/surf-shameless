@@ -16,4 +16,12 @@
 #body_wrapper{
     width: 800px;
     margin: 0 auto;
+    display: none;
+}
+
+#lockdown{
+    width: 500px;
+    height: 200px;
+    text-align: center;
+    margin: auto;
 }

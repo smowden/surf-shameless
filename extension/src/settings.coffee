@@ -73,7 +73,7 @@ $(
             $('#selected_lists > tbody:last').append(descRow)
             $('#selected_lists > tbody:last').append(detailRow)
         xhr.send()
-    loadAvailableLists()
+
 
     # custom list stuff
     getCustomList = (type) ->
@@ -97,9 +97,6 @@ $(
           destination.append(td)
       undefined
 
-
-    getCustomList("url")
-    getCustomList("keyword")
 
     customListAdd = (string, type) ->
       if type == "url"
@@ -182,5 +179,16 @@ $(
         $(@).parent().parent().children(".urls_column").slideUp()
         $(".toggle_urls_icon", @).attr("src", "images/show.png")
         $(".toggle_urls_caption", @).text("Show list contents")
+    )
+
+    $('#lockdown_password').keyup(
+      ->
+        console.log($(@).val())
+        if $(@).val() == "password"
+          loadAvailableLists()
+          getCustomList("url")
+          getCustomList("keyword")
+          $("#body_wrapper").show()
+          $("#lockdown").hide()
     )
 )
