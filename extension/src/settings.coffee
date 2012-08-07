@@ -126,10 +126,7 @@ $(
         removeItem = string if type == "keyword"
         listIndex = myCustomList.indexOf(removeItem)
         myCustomList.splice(listIndex, 1)
-        if myCustomList.length > 0
-          localStorage[customListName] = JSON.stringify(myCustomList)
-        else
-          localStorage[customListName] = undefined
+        localStorage[customListName] = JSON.stringify(myCustomList)
 
       blacklistReInit()
 
@@ -139,7 +136,7 @@ $(
 
     $('.remove_url_item').live('click', ->
       customListRemove($(this).text(), "url")
-      $(this).parent().remove()
+      $(@).parent().remove()
     )
 
 
@@ -149,8 +146,8 @@ $(
     )
 
     $('.remove_keyword_item').live('click', ->
-      customListRemove($(this).text(), "keyword")
-      $(this).parent().remove()
+      customListRemove($(@).text(), "keyword")
+      $(@).parent().remove()
     )
 
     $('#add_new_url').click( ->
@@ -170,15 +167,19 @@ $(
       getCustomList("keyword")
     )
 
-    $('.toggle_urls_btn a').toggle(
+    $('.toggle_urls_btn').live( 'click',
       ->
-        $(@).parent().parent().children(".urls_column").slideDown()
-        $(".toggle_urls_icon", @).attr("src", "images/hide.png")
-        $(".toggle_urls_caption", @).text("Hide list contents")
-      , ->
-        $(@).parent().parent().children(".urls_column").slideUp()
-        $(".toggle_urls_icon", @).attr("src", "images/show.png")
-        $(".toggle_urls_caption", @).text("Show list contents")
+        urlColumns = $(@).parent().children(".urls_column")
+        console.log(urlColumns)
+        if not urlColumns.is(":visible")
+          urlColumns.slideDown()
+          $(".toggle_urls_icon", @).attr("src", "images/hide.png")
+          $(".toggle_urls_caption", @).text("Hide list contents")
+        else
+          urlColumns.slideUp()
+          $(".toggle_urls_icon", @).attr("src", "images/show.png")
+          $(".toggle_urls_caption", @).text("Show list contents")
+        false
     )
 
     $('#lockdown_password').keyup(
@@ -190,5 +191,6 @@ $(
           getCustomList("keyword")
           $("#body_wrapper").show()
           $("#lockdown").hide()
+          $(@).remove()
     )
 )

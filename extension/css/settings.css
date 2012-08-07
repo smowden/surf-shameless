@@ -14,14 +14,18 @@
 }
 
 #body_wrapper{
-    width: 800px;
+    width: 55em;
     margin: 0 auto;
     display: none;
 }
 
 #lockdown{
-    width: 500px;
-    height: 200px;
+    width: 35em;
+    height: 11em;
     text-align: center;
     margin: auto;
+}
+
+.toggle_urls_btn{
+    cursor: pointer;
 }

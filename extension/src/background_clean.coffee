@@ -277,12 +277,40 @@ class WipeMode
     )
     undefined
 
+contextMenuAddSite = (info, tab) ->
+  parser = document.createElement('a');
+  parser.href = tab.url
+  myCustomUrls = JSON.parse(localStorage["myCustomUrlList"])
+  hostname = parser.hostname.replace("www.", "")
+  if myCustomUrls.indexOf(hostname) == -1
+    myCustomUrls.push(hostname)
+    localStorage["myCustomUrlList"] = JSON.stringify(myCustomUrls)
+
+  alert "Added #{hostname} to your blacklist"
+
+
+
 myBlacklist = new MyBlacklist()
 console.log(myBlacklist.getBlacklist("urls"))
 
 wipeMode = new WipeMode(myBlacklist)
 
 
+parent = chrome.contextMenus.create({"title": "Embaressment Filter"})
+
+child1 = chrome.contextMenus.create(
+  {"title": "Don't log my visits to this site", "parentId": parent, "onclick": contextMenuAddSite})
+
+child2 = chrome.contextMenus.create(
+  {"title": "Make this a private bookmark", "parentId": parent, "onclick": contextMenuAddSite})
+
+console.log("parent:" + parent + " child1:" + child1 + " child2:" + child2)
+
+if localStorage["myCustomUrlList"] == "undefined" or typeof localStorage["myCustomUrlList"] == "undefined"
+  localStorage["myCustomUrlList"] = JSON.stringify([])
+
+if localStorage["myCustomKeywordList"] == "undefined" or typeof localStorage["myCustomKeywordList"] == "undefined"
+  localStorage["myCustomKeywordList"] = JSON.stringify([])
 
 chrome.tabs.onUpdated.addListener(
     wipeMode.tabAdded
