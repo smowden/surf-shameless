@@ -29,11 +29,14 @@ class MyBlacklist
       keywords: []
       urls: []
 
-    if localStorage["myCustomKeywordList"] != "undefined" and typeof localStorage["myCustomKeywordList"] != "undefined"
-      lists.keywords = JSON.parse(localStorage["myCustomKeywordList"])
+    possibleBlacklist = CryptoJS.AES.decrypt(localStorage["customBlacklist"], localStorage["obfuKey"])
+                      .toString(CryptoJS.enc.Utf8)
 
-    if localStorage["myCustomUrlList"] != "undefined" and typeof localStorage["myCustomUrlList"] != "undefined"
-      lists.urls = JSON.parse(localStorage["myCustomUrlList"])
+    if possibleBlacklist.length > 0
+      try
+        lists = JSON.parse(possibleBlacklist)
+      catch e
+        alert e
 
     lists
 
@@ -45,6 +48,36 @@ class MyBlacklist
 
   saveSettings: () ->
     localStorage["efSettings"] = JSON.stringify(settings)
+
+
+  storeObfuscatedBlacklist: () ->
+    localStorage["customBlacklist"] = CryptoJS.AES.encrypt(JSON.stringify(customBlacklist), localStorage["obfuKey"]).toString()
+
+  addToBlacklist: (type, entry) ->
+    console.log("add to blacklist called with", type, entry)
+    entry = entry.toLowerCase()
+    entry = "http://#{entry}" if entry.indexOf("http://") == -1 and entry.indexOf("https://") == -1
+    if type == "url"
+      parser = document.createElement('a');
+      parser.href = entry
+      hostname = parser.hostname.replace("www.", "")
+      if customBlacklist.urls.indexOf(hostname) == -1
+        customBlacklist.urls.push(hostname)
+        @storeObfuscatedBlacklist()
+        return hostname
+    else if type == "keyword"
+      if customBlacklist.keywords.indexOf(entry) == -1
+        customBlacklist.keywords.push()
+        @storeObfuscatedBlacklist()
+
+  removeFromBlacklist: (type, entry) ->
+    console.log("removeFromBlacklist", type, entry)
+    entry = entry.toLowerCase()
+    listIndex = customBlacklist[type+"s"].indexOf(entry)
+    if listIndex >= 0
+      customBlacklist[type+"s"].splice(listIndex, 1)
+    @storeObfuscatedBlacklist()
+
 
   init: () ->
     ###
@@ -277,23 +310,25 @@ class WipeMode
     )
     undefined
 
-contextMenuAddSite = (info, tab) ->
-  parser = document.createElement('a');
-  parser.href = tab.url
-  myCustomUrls = JSON.parse(localStorage["myCustomUrlList"])
-  hostname = parser.hostname.replace("www.", "")
-  if myCustomUrls.indexOf(hostname) == -1
-    myCustomUrls.push(hostname)
-    localStorage["myCustomUrlList"] = JSON.stringify(myCustomUrls)
 
-  alert "Added #{hostname} to your blacklist"
-
+if localStorage["firstRun"] == undefined
+  localStorage["obfuKey"] = Math.random().toString(36).substring(7);
+  localStorage["firstRun"] = false
+  emptyList =
+    keywords: []
+    urls: []
+  localStorage["customBlacklist"] = CryptoJS.AES.encrypt(JSON.stringify(emptyList), localStorage["obfuKey"]).toString()
 
 
 myBlacklist = new MyBlacklist()
 console.log(myBlacklist.getBlacklist("urls"))
 
 wipeMode = new WipeMode(myBlacklist)
+
+contextMenuAddSite = (info, tab) ->
+  hostname = myBlacklist.addToBlacklist("url", tab.url)
+
+  alert "Added #{hostname} to your blacklist"
 
 
 parent = chrome.contextMenus.create({"title": "Embaressment Filter"})
@@ -306,11 +341,13 @@ child2 = chrome.contextMenus.create(
 
 console.log("parent:" + parent + " child1:" + child1 + " child2:" + child2)
 
+###
 if localStorage["myCustomUrlList"] == "undefined" or typeof localStorage["myCustomUrlList"] == "undefined"
   localStorage["myCustomUrlList"] = JSON.stringify([])
 
 if localStorage["myCustomKeywordList"] == "undefined" or typeof localStorage["myCustomKeywordList"] == "undefined"
   localStorage["myCustomKeywordList"] = JSON.stringify([])
+###
 
 chrome.tabs.onUpdated.addListener(
     wipeMode.tabAdded
@@ -334,6 +371,14 @@ chrome.extension.onRequest.addListener(
     else if request.action == "reInit"
       myBlacklist.init()
       wipeMode.wipeHistory(undefined, true)
+    else if request.action == "addToBlacklist"
+      myBlacklist.addToBlacklist(request.type, request.entry)
+      sendResponse(myBlacklist.getBlacklist())
+    else if request.action == "rmFromBlacklist"
+      myBlacklist.removeFromBlacklist(request.type, request.entry)
+      sendResponse(myBlacklist.getBlacklist())
+    else if request.action == "getLists"
+      sendResponse(myBlacklist.getBlacklist())
 
     console.log(request)
 )

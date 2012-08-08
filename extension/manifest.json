@@ -12,7 +12,7 @@
     },
     "permissions": [ "tabs", "http://*/*", "https://*/*", "webRequest", "webRequestBlocking", "history", "contextMenus", "storage"],
     "background":{
-        "scripts": ["build/background_clean.js"]
+        "scripts": ["js/aes.js", "build/background_clean.js"]
     },
     "options_page": "settings.html"
 }

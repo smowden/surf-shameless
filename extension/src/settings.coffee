@@ -76,66 +76,46 @@ $(
 
 
     # custom list stuff
-    getCustomList = (type) ->
-      console.log("get custom list called")
-      console.log(type)
-      if type == "url"
-        customListName = "myCustomUrlList"
-        destination = $("#my_urls > tbody:last")
-      else if type == "keyword"
-        customListName = "myCustomKeywordList"
-        destination = $("#my_keywords > tbody:last")
-
-      if localStorage[customListName] != "undefined" and typeof(localStorage[customListName]) != "undefined" and localStorage[customListName] != undefined
-        for item in JSON.parse(localStorage[customListName])
-          td = $("""<td>
-                      <span class='url'>#{item}</span>
-                      <a class='remove_#{type}_item' href='javascript:void(0)'>
-                        <img src='images/delete.png' />
-                      </a>
-                    </td>""")
-          destination.append(td)
-      undefined
+    getCustomList =  ->
+      chrome.extension.sendRequest({"action": "getLists"},
+        (lists) ->
+          for type, listContents of lists
+            console.log(type, listContents)
+            destination = $("#my_#{type} > tbody:last")
+            destination.children().remove()
+            for item in listContents
+              td = $("""<td>
+                          <span class='#{type.replace("s", "")}'>#{item}</span>
+                          <a class='remove_#{type.replace("s", "")}_item' href='javascript:void(0)'>
+                            <img src='images/delete.png' />
+                          </a>
+                        </td>""")
+              destination.append(td)
+      )
 
 
-    customListAdd = (string, type) ->
-      if type == "url"
-        customListName = "myCustomUrlList"
-      else if type == "keyword"
-        customListName = "myCustomKeywordList"
-
-      if localStorage[customListName] == "undefined" or typeof localStorage[customListName] == "undefined" or localStorage[customListName] == undefined
-        myCustomList = []
-      else
-        myCustomList = JSON.parse(localStorage[customListName])
-      myCustomList.push(string.replace("http://", "").replace("www.", ""))
-      localStorage[customListName] = JSON.stringify(myCustomList)
-
-      blacklistReInit()
+    customListAdd = (type, entry) ->
+      chrome.extension.sendRequest({"action": "addToBlacklist", "type": type, "entry": entry},
+        (response) ->
+          getCustomList()
+          blacklistReInit()
+      )
 
 
-    customListRemove = (string, type) ->
-      if type == "url"
-        customListName = "myCustomUrlList"
-      else if type == "keyword"
-        customListName = "myCustomKeywordList"
 
-      myCustomList = JSON.parse(localStorage[customListName])
-      if myCustomList
-        removeItem = string.replace("http://", "").replace("www.", "") if type == "url"
-        removeItem = string if type == "keyword"
-        listIndex = myCustomList.indexOf(removeItem)
-        myCustomList.splice(listIndex, 1)
-        localStorage[customListName] = JSON.stringify(myCustomList)
-
-      blacklistReInit()
+    customListRemove = (type, entry) ->
+      chrome.extension.sendRequest({"action": "rmFromBlacklist", "type": type, "entry": entry},
+        (response) ->
+          getCustomList()
+          blacklistReInit()
+      )
 
 
 
     $('#nav_tabs').tabs()
 
     $('.remove_url_item').live('click', ->
-      customListRemove($(this).text(), "url")
+      customListRemove("url", $(@).parent().children("span").text())
       $(@).parent().remove()
     )
 
@@ -146,7 +126,7 @@ $(
     )
 
     $('.remove_keyword_item').live('click', ->
-      customListRemove($(@).text(), "keyword")
+      customListRemove("keyword", $(@).parent().children("span").text())
       $(@).parent().remove()
     )
 
@@ -154,17 +134,17 @@ $(
       if $('#new_url_add').val().length == 0
         alert("Url field is emptry")
         return false
-      customListAdd($('#new_url_add').val(), "url")
+      customListAdd("url", $('#new_url_add').val())
       $("#my_urls tbody").html("")
-      getCustomList("url")
+      getCustomList()
     )
     $('#add_new_keyword').click( ->
       if $('#new_keyword_add').val().length == 0
         alert("Keyword field is emptry")
         return false
-      customListAdd($('#new_keyword_add').val(), "keyword")
+      customListAdd("keyword", $('#new_keyword_add').val())
       $("#my_keywords tbody").html("")
-      getCustomList("keyword")
+      getCustomList()
     )
 
     $('.toggle_urls_btn').live( 'click',
