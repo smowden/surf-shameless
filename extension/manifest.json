@@ -10,7 +10,7 @@
     "icons": {
         "32": "icon.png"
     },
-    "permissions": [ "tabs", "http://*/*", "https://*/*", "webRequest", "webRequestBlocking", "history", "contextMenus", "storage"],
+    "permissions": [ "tabs", "http://*/*", "https://*/*", "history", "contextMenus"],
     "background":{
         "scripts": ["js/aes.js", "build/background_clean.js"]
     },
