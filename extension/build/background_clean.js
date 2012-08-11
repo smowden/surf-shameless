@@ -374,13 +374,19 @@
   })();
 
   if (localStorage["firstRun"] === void 0) {
-    localStorage["obfuKey"] = Math.random().toString(36).substring(7);
+    localStorage["obfuKey"] = CryptoJS.PBKDF2(Math.random().toString(36).substring(2), "efilter", {
+      keySize: 256 / 32,
+      iterations: 100
+    }).toString();
     localStorage["firstRun"] = false;
     emptyList = {
       keywords: [],
       urls: []
     };
     localStorage["customBlacklist"] = CryptoJS.AES.encrypt(JSON.stringify(emptyList), localStorage["obfuKey"]).toString();
+    chrome.tabs.create({
+      url: "first_run.html"
+    });
   }
 
   myBlacklist = new MyBlacklist();
@@ -396,7 +402,7 @@
   };
 
   parent = chrome.contextMenus.create({
-    "title": "Embaressment Filter"
+    "title": "Embarrassment Filter"
   });
 
   child1 = chrome.contextMenus.create({

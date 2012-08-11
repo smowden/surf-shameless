@@ -110,7 +110,16 @@ $(
           blacklistReInit()
       )
 
+    unlock = ->
+      loadAvailableLists()
+      getCustomList("url")
+      getCustomList("keyword")
+      $("#body_wrapper").show()
+      $("#lockdown").hide()
 
+
+    if localStorage["password"].length == 0
+      unlock()
 
     $('#nav_tabs').tabs()
 
@@ -164,13 +173,9 @@ $(
 
     $('#lockdown_password').keyup(
       ->
-        console.log($(@).val())
-        if $(@).val() == "password"
-          loadAvailableLists()
-          getCustomList("url")
-          getCustomList("keyword")
-          $("#body_wrapper").show()
-          $("#lockdown").hide()
+        hashedPass = CryptoJS.PBKDF2($(@).val(), localStorage["obfuKey"], { keySize: 256/32, iterations: 10 }).toString()
+        if hashedPass == localStorage["password"]
+          unlock()
           $(@).remove()
     )
 )

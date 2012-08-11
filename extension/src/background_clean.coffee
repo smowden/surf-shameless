@@ -310,7 +310,7 @@ class WipeMode
 
 
 if localStorage["firstRun"] == undefined
-  localStorage["obfuKey"] = Math.random().toString(36).substring(7);
+  localStorage["obfuKey"] = CryptoJS.PBKDF2(Math.random().toString(36).substring(2), "efilter", { keySize: 256/32, iterations: 100 }).toString()
   localStorage["firstRun"] = false
   emptyList =
     keywords: []
@@ -329,7 +329,7 @@ contextMenuAddSite = (info, tab) ->
   alert "Added #{hostname} to your blacklist"
 
 
-parent = chrome.contextMenus.create({"title": "Embaressment Filter"})
+parent = chrome.contextMenus.create({"title": "Embarrassment Filter"})
 
 child1 = chrome.contextMenus.create(
   {"title": "Don't log my visits to this site", "parentId": parent, "onclick": contextMenuAddSite})

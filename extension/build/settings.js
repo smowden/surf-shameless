@@ -1,7 +1,7 @@
 (function() {
 
   $(function() {
-    var blacklistReInit, changeListState, customListAdd, customListRemove, getCustomList, listInitializer, loadAvailableLists;
+    var blacklistReInit, changeListState, customListAdd, customListRemove, getCustomList, listInitializer, loadAvailableLists, unlock;
     loadAvailableLists = function() {
       var _this = this;
       if (localStorage["efSettings"] === "undefined" || typeof localStorage["efSettings"] === "undefined") {
@@ -130,6 +130,14 @@
         return blacklistReInit();
       });
     };
+    unlock = function() {
+      loadAvailableLists();
+      getCustomList("url");
+      getCustomList("keyword");
+      $("#body_wrapper").show();
+      return $("#lockdown").hide();
+    };
+    if (localStorage["password"].length === 0) unlock();
     $('#nav_tabs').tabs();
     $('.remove_url_item').live('click', function() {
       customListRemove("url", $(this).parent().children("span").text());
@@ -178,13 +186,13 @@
       return false;
     });
     return $('#lockdown_password').keyup(function() {
-      console.log($(this).val());
-      if ($(this).val() === "password") {
-        loadAvailableLists();
-        getCustomList("url");
-        getCustomList("keyword");
-        $("#body_wrapper").show();
-        $("#lockdown").hide();
+      var hashedPass;
+      hashedPass = CryptoJS.PBKDF2($(this).val(), localStorage["obfuKey"], {
+        keySize: 256 / 32,
+        iterations: 10
+      }).toString();
+      if (hashedPass === localStorage["password"]) {
+        unlock();
         return $(this).remove();
       }
     });

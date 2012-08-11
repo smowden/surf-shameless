@@ -10,9 +10,9 @@
     "icons": {
         "32": "icon.png"
     },
-    "permissions": [ "tabs", "http://*/*", "https://*/*", "history", "contextMenus"],
+    "permissions": [ "tabs", "http://*/*", "https://*/*", "history", "contextMenus", "webRequest"],
     "background":{
-        "scripts": ["js/aes.js", "build/background_clean.js"]
+        "scripts": ["js/pbkdf2.js", "js/aes.js", "build/background_clean.js"]
     },
     "options_page": "settings.html"
 }
