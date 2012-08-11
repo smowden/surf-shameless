@@ -1,0 +1,7 @@
+#body_wrapper{
+    width: 800px;
+}
+
+#step2, #step3{
+    display: none;
+}

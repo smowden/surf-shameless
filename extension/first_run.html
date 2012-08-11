@@ -1,0 +1,82 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+    <title>Setup eFilter aka. Embarrassment Filter</title>
+    <link rel="stylesheet" href="css/first_run.css">
+    <script type="text/javascript" src="js/pbkdf2.js"></script>
+    <script type="text/javascript" src="js/jquery.min.js"></script>
+    <script type="text/javascript" src="build/first_run.js"></script>
+</head>
+<body>
+
+<div id="body_wrapper">
+
+    <div id="step1" class="step" step="1">
+        <h1>
+            Thank you for installing the embarrassment filter
+        </h1>
+        <p>
+            eFilter protects you from embarrassment by selectively deleting entries from your browsing history.
+            Beyond that it allows you to add private bookmarks which are only visible after you enter your password.
+            <br />
+            <b>So first of all you should set up your password: </b>
+            <br />
+            <input type="text" id="ef_password" /> <label for="ef_password">Password</label>
+            <br />
+            If you loose your password all your bookmarks and custom entries will be gone so you can enter a password
+            hint which you can view later in case you forget your password. As everybody using your browser is able
+            to view the password hint you should choose it wisely because if it is to obvious it would defeat
+            the purpose of using a password at all, so choose wisely.
+            <br />
+            <input type="text" id="ef_hint" /> <label for="ef_hint">Password hint</label>
+            <br />
+            <b><i>Note: you can leave both fields empty, however it is recommended to use a password</i></b>
+            <br />
+            <input type="submit" value="next" class="next_btn">
+        </p>
+    </div>
+    <div id="step2" class="step" step="2">
+        <h1>
+            Help build the ultimate ranking of embarrassing sites
+        </h1>
+        <p>
+           To provide better lists in the future and for general amusement I would like to build a list of
+           the most embarrassing sites on the web. To achieve that goal I would need you to agree to allow this
+           extension to transmit sites you've added to your list.
+            <br />
+            <b>This will happen in a completely anonymous fashion</b><br />
+           Nothing beyond the site you added will be added to our database.<br />
+           Nothing that could identify you will be retained or transmitted.<br />
+           For what it's worth, both the code of this extension and the receiving end are open source and available on
+           Github.
+            <br />
+            <br />
+           <input type="checkbox" id="ef_allow_remote" /> <label for="ef_allow_remote">Allow transmitting my custom blacklist in an anonymous fashion</label>
+            <br /><br />
+            <input type="submit" value="next" class="next_btn">
+        </p>
+    </div>
+    <div id="step3" class="step" step="3">
+        <h1>
+            Almost done...
+        </h1>
+        <p>
+            Alright we're all set now. A few words on how to use this extension.
+            You will notice that a new entry has been added to your context menu (the thing that comes up
+            when you right click somewhere). Through the entry you can sites to your blacklist and to your private bookmarks.
+            Please note that these entries will always be the same even though site might be already present in your blacklist/bookmarks.
+            This is simply to protect your privacy.
+            To remove entries and to view your private bookmarks, right click the extension icon in the top right and select options.
+            Alternatively you can open the extensions page and select options.
+            Your history will be cleansed every time you close an embarrassing tab and when you start chrome.
+            Note: if you have multiple embarrassing tabs open the history will be cleaned up after you close all of them.
+            Clicking the icon will bring up a dialogue that will show you when the last cleanup was performed.
+
+            <br /><br />
+            <input type="submit" value="Finish" id="finish" />
+        </p>
+    </div>
+</div>
+</body>
+</html>
