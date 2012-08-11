@@ -1,6 +1,4 @@
-# todo on first run flush the cache or delete "History Provider Cache" in user folder AND archived history
 # todo credit pixture for the icon ( http://www.pixture.com/drupal/ )
-# todo build better/custom localstorage handler
 #############################################
 
 
@@ -318,6 +316,7 @@ if localStorage["firstRun"] == undefined
     keywords: []
     urls: []
   localStorage["customBlacklist"] = CryptoJS.AES.encrypt(JSON.stringify(emptyList), localStorage["obfuKey"]).toString()
+  chrome.tabs.create({url: "first_run.html"})
 
 
 myBlacklist = new MyBlacklist()
@@ -327,7 +326,6 @@ wipeMode = new WipeMode(myBlacklist)
 
 contextMenuAddSite = (info, tab) ->
   hostname = myBlacklist.addToBlacklist("url", tab.url)
-
   alert "Added #{hostname} to your blacklist"
 
 
