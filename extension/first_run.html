@@ -38,6 +38,36 @@
     </div>
     <div id="step2" class="step" step="2">
         <h1>
+            Select the mode of operation
+        </h1>
+        <p>
+           eFilter implements two modes of operation, you have to choose one
+            <br />
+            <div>
+                <input type="radio" id="mode_retroactive" group="op_mode" />
+                <h3>Retroactive mode</h3>
+                <br />
+                Will blacklisted entries every time you start Chrome and close offending tabs.<br />
+                This is the least invasive mode. It will make sure your browsing history will look clean to
+                other people who take a peak. Offending sites will still show up briefly in the recently closed tabs
+                section.
+            </div>
+            <div>
+                <input type="radio" id="mode_preventive" group="op_mode" />
+                <h3>Preventive mode</h3>
+                <br />
+                This will redirect blacklisted sites to a incognito window whose contents will be discarded once you close
+                the window. Just to be safe the extension will scan your history for offending entries and purge them.
+                As this will pop up a new window each time you visit a blacklisted site this mode is not quite as seemless
+                as one might wish.
+            </div>
+            <br />
+            <br />
+            <input type="submit" value="next" class="next_btn">
+        </p>
+    </div>
+    <div id="step3" class="step" step="3">
+        <h1>
             Help build the ultimate ranking of embarrassing sites
         </h1>
         <p>
@@ -57,7 +87,7 @@
             <input type="submit" value="next" class="next_btn">
         </p>
     </div>
-    <div id="step3" class="step" step="3">
+    <div id="step4" class="step" step="4">
         <h1>
             Almost done...
         </h1>

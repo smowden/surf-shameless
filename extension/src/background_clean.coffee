@@ -16,6 +16,37 @@ class MyBlacklist
   constructor: () ->
     @init()
 
+
+  init: () ->
+    ###
+    as the name init suggestst this method (re)initializes the blacklist
+    this means it populates the blacklistKeywords and blacklistUrls with the user defined keywords and urls
+    and then proceeds to join them with the lists that the user enabled
+    once initialization is done readyState is true
+    ###
+
+    console.log("init...")
+
+    storedSettings = @loadSettings()
+    settings = storedSettings if storedSettings != undefined
+
+    console.log(settings)
+    customBlacklist = @getCustomLists()
+
+    @readyState = false
+    if settings.myAvailableLists == undefined
+      @getAvailableLists()
+      setTimeout(
+        =>
+          @init()
+        , 100
+      )
+
+    else
+      console.log("enabling lists...")
+      @loadEnabledLists()
+
+
   getCustomLists: () ->
     lists =
       keywords: []
@@ -56,7 +87,7 @@ class MyBlacklist
       if customBlacklist.urls.indexOf(hostname) == -1
         customBlacklist.urls.push(hostname)
         @storeObfuscatedBlacklist()
-        return hostname
+      return hostname
     else if type == "keyword"
       if customBlacklist.keywords.indexOf(entry) == -1
         customBlacklist.keywords.push()
@@ -69,36 +100,6 @@ class MyBlacklist
     if listIndex >= 0
       customBlacklist[type+"s"].splice(listIndex, 1)
     @storeObfuscatedBlacklist()
-
-
-  init: () ->
-    ###
-    as the name init suggestst this method (re)initializes the blacklist
-    this means it populates the blacklistKeywords and blacklistUrls with the user defined keywords and urls
-    and then proceeds to join them with the lists that the user enabled
-    once initialization is done readyState is true
-    ###
-
-    console.log("init...")
-
-    storedSettings = @loadSettings()
-    settings = storedSettings if storedSettings != undefined
-
-    console.log(settings)
-    customBlacklist = @getCustomLists()
-
-    @readyState = false
-    if settings.myAvailableLists == undefined
-      @getAvailableLists()
-      setTimeout(
-        =>
-          @init()
-        , 100
-      )
-
-    else
-      console.log("enabling lists...")
-      @loadEnabledLists()
 
 
   getBlacklist: () ->
@@ -303,6 +304,24 @@ class WipeMode
     )
     undefined
 
+  installListeners: ->
+    chrome.tabs.onUpdated.addListener(
+      @tabAdded
+    )
+
+    chrome.tabs.onRemoved.addListener(
+      (tabId, removeInfo) ->
+        @tabClosed(tabId)
+    )
+
+    chrome.webRequest.onBeforeRedirect.addListener(
+      @onRedirect,
+      {
+      urls: ["http://*/*"],
+      types: ["main_frame"]
+      }
+    )
+
 class InterceptMode
   constructor: (@myBlacklist) ->
     @init()
@@ -357,8 +376,19 @@ class InterceptMode
     tmpFilter
 
 
+class ContextMenu
+  constructor: (@myBlacklist) ->
+    parent = chrome.contextMenus.create({"title": "Embarrassment Filter"})
 
+    child1 = chrome.contextMenus.create(
+      {"title": "Don't log my visits to this site", "parentId": parent, "onclick": @contextMenuAddSite})
 
+    child2 = chrome.contextMenus.create(
+      {"title": "Make this a private bookmark", "parentId": parent, "onclick": @contextMenuAddSite})
+
+  contextMenuAddSite: (info, tab) ->
+    hostname = myBlacklist.addToBlacklist("url", tab.url)
+    alert "Added #{hostname} to your blacklist"
 
 if localStorage["firstRun"] == undefined
   localStorage["obfuKey"] = CryptoJS.PBKDF2(Math.random().toString(36).substring(2), "efilter", { keySize: 256/32, iterations: 100 }).toString()
@@ -372,42 +402,11 @@ if localStorage["firstRun"] == undefined
 
 
 myBlacklist = new MyBlacklist()
-console.log(myBlacklist.getBlacklist("urls"))
-
 wipeMode = new WipeMode(myBlacklist)
 interceptMode = new InterceptMode(myBlacklist)
-
-contextMenuAddSite = (info, tab) ->
-  hostname = myBlacklist.addToBlacklist("url", tab.url)
-  alert "Added #{hostname} to your blacklist"
+contextMenu = new ContextMenu(myBlacklist)
 
 
-parent = chrome.contextMenus.create({"title": "Embarrassment Filter"})
-
-child1 = chrome.contextMenus.create(
-  {"title": "Don't log my visits to this site", "parentId": parent, "onclick": contextMenuAddSite})
-
-child2 = chrome.contextMenus.create(
-  {"title": "Make this a private bookmark", "parentId": parent, "onclick": contextMenuAddSite})
-
-console.log("parent:" + parent + " child1:" + child1 + " child2:" + child2)
-
-chrome.tabs.onUpdated.addListener(
-    wipeMode.tabAdded
-)
-
-chrome.tabs.onRemoved.addListener(
-  (tabId, removeInfo) ->
-    wipeMode.tabClosed(tabId)
-)
-
-chrome.webRequest.onBeforeRedirect.addListener(
-  wipeMode.onRedirect,
-  {
-    urls: ["http://*/*"],
-    types: ["main_frame"]
-  }
-)
 
 chrome.extension.onRequest.addListener(
   (request, sender, sendResponse) ->
@@ -433,15 +432,3 @@ chrome.extension.onRequest.addListener(
 
     console.log(request)
 )
-
-
-"""
-chrome.webRequest.onBeforeRequest.addListener(
-  interceptRequest
-  ,{
-  urls: ["http://*/*"],
-  types: ["main_frame"]
-  },
-  ["blocking"]
-)
-"""

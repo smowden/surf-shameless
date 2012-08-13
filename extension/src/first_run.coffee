@@ -17,6 +17,7 @@ $(
           curStep.hide()
           $("#step2").show()
         else if curStepNo == 2
+        else if curStepNo == 3
           localStorage["allowRemote"] = $("#ef_allow_remote").is(":checked")
           curStep.hide()
           $("#step3").show()
