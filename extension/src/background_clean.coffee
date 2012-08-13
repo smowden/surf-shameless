@@ -318,14 +318,17 @@ class InterceptMode
       if chrome.webRequest.onBeforeRequest.hasListener()
         chrome.webRequest.onBeforeRequest.removeListener()
 
-      chrome.webRequest.onBeforeRequest.addListener(
-        @intercept
-        ,{
-          urls: @buildFilter(),
-          types: ["main_frame"]
-        },
-        ["blocking"]
-      )
+      filter = @buildFilter()
+
+      if filter.length > 0
+        chrome.webRequest.onBeforeRequest.addListener(
+          @intercept
+          ,{
+            urls: filter,
+            types: ["main_frame"]
+          },
+          ["blocking"]
+        )
 
 
   intercept: (details) ->
@@ -371,7 +374,7 @@ if localStorage["firstRun"] == undefined
 myBlacklist = new MyBlacklist()
 console.log(myBlacklist.getBlacklist("urls"))
 
-#wipeMode = new WipeMode(myBlacklist)
+wipeMode = new WipeMode(myBlacklist)
 interceptMode = new InterceptMode(myBlacklist)
 
 contextMenuAddSite = (info, tab) ->
