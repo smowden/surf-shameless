@@ -1,12 +1,6 @@
 # todo credit pixture for the icon ( http://www.pixture.com/drupal/ )
 #############################################
 
-
-
-
-
-
-
 class MyBlacklist
   readyState: false
 
@@ -201,7 +195,7 @@ class WipeMode
 
   init: () ->
     console.log("waiting for readyness")
-    if not myBlacklist.readyState
+    unless myBlacklist.readyState
       setTimeout(
         =>
           @init()
@@ -303,10 +297,64 @@ class WipeMode
 
       localStorage["popup_lastCleanupTime"] =  JSON.stringify(new Date)
       localStorage["popup_cleanupUrlCounter"] =  deleteCount
+      localStorage["totalRemoved"] = JSON.parse(localStorage["totalRemoved"]) + deleteCount
 
       undefined
     )
     undefined
+
+class InterceptMode
+  constructor: (@myBlacklist) ->
+    @init()
+
+  init: =>
+    unless myBlacklist.readyState
+      setTimeout(
+        =>
+          @init()
+        , 100
+      )
+    else
+      if chrome.webRequest.onBeforeRequest.hasListener()
+        chrome.webRequest.onBeforeRequest.removeListener()
+
+      chrome.webRequest.onBeforeRequest.addListener(
+        @intercept
+        ,{
+          urls: @buildFilter(),
+          types: ["main_frame"]
+        },
+        ["blocking"]
+      )
+
+
+  intercept: (details) ->
+    localStorage["totalRemoved"] = JSON.parse(localStorage["totalRemoved"]) + 1
+
+    chrome.windows.create(
+      {
+        "url": details.url,
+        "incognito": true
+      }
+      , ->
+        chrome.tabs.remove(details.tabId)
+        console.log("spawned new window")
+    )
+    {"cancel": true}
+
+  buildFilter: ->
+    tmpFilter = []
+    blacklist = @myBlacklist.getBlacklist()
+
+    for url in blacklist["urls"]
+      tmpFilter.push("*://*.#{url}/*")
+      tmpFilter.push("*://#{url}/*")
+
+    console.log("tmp filter:", tmpFilter)
+    tmpFilter
+
+
+
 
 
 if localStorage["firstRun"] == undefined
@@ -316,13 +364,15 @@ if localStorage["firstRun"] == undefined
     keywords: []
     urls: []
   localStorage["customBlacklist"] = CryptoJS.AES.encrypt(JSON.stringify(emptyList), localStorage["obfuKey"]).toString()
+  localStorage["totalRemoved"] = 0
   chrome.tabs.create({url: "first_run.html"})
 
 
 myBlacklist = new MyBlacklist()
 console.log(myBlacklist.getBlacklist("urls"))
 
-wipeMode = new WipeMode(myBlacklist)
+#wipeMode = new WipeMode(myBlacklist)
+interceptMode = new InterceptMode(myBlacklist)
 
 contextMenuAddSite = (info, tab) ->
   hostname = myBlacklist.addToBlacklist("url", tab.url)
@@ -339,14 +389,6 @@ child2 = chrome.contextMenus.create(
 
 console.log("parent:" + parent + " child1:" + child1 + " child2:" + child2)
 
-###
-if localStorage["myCustomUrlList"] == "undefined" or typeof localStorage["myCustomUrlList"] == "undefined"
-  localStorage["myCustomUrlList"] = JSON.stringify([])
-
-if localStorage["myCustomKeywordList"] == "undefined" or typeof localStorage["myCustomKeywordList"] == "undefined"
-  localStorage["myCustomKeywordList"] = JSON.stringify([])
-###
-
 chrome.tabs.onUpdated.addListener(
     wipeMode.tabAdded
 )
@@ -354,6 +396,14 @@ chrome.tabs.onUpdated.addListener(
 chrome.tabs.onRemoved.addListener(
   (tabId, removeInfo) ->
     wipeMode.tabClosed(tabId)
+)
+
+chrome.webRequest.onBeforeRedirect.addListener(
+  wipeMode.onRedirect,
+  {
+    urls: ["http://*/*"],
+    types: ["main_frame"]
+  }
 )
 
 chrome.extension.onRequest.addListener(
@@ -381,13 +431,7 @@ chrome.extension.onRequest.addListener(
     console.log(request)
 )
 
-chrome.webRequest.onBeforeRedirect.addListener(
-  wipeMode.onRedirect,
-  {
-    urls: ["http://*/*"],
-    types: ["main_frame"]
-  }
-)
+
 """
 chrome.webRequest.onBeforeRequest.addListener(
   interceptRequest
