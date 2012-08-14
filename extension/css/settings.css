@@ -1,18 +1,26 @@
+#selected_lists{
+    width: 100%;
+}
+
 .urls_column{
     float: left;
-    width: 210px;
+    width: 205px;
     display: none;
 }
 
 .toggle_urls_btn{
-    text-align: center;
+    display: block !important;
 }
 
-.toggle_urls_btn a{
-    text-decoration: none;
-    color: #000;
+.hint{
+    margin: 20px 0;
+    padding: 0 .7em;
 }
 
+.hint span.ui-icon{
+    float: left;
+    margin-right: .7em;
+}
 #body_wrapper{
     width: 55em;
     margin: 0 auto;
@@ -28,4 +36,16 @@
 
 .toggle_urls_btn{
     cursor: pointer;
+}
+
+.add_footer{
+    margin-top: 1em;
+}
+
+.items_container{
+    padding: 1em;
+}
+
+.items_container .remove_item{
+    margin: 0.13em !important;
 }

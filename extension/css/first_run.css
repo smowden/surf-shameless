@@ -1,7 +1,21 @@
 #body_wrapper{
     width: 800px;
+    margin: auto;
 }
 
-#step2, #step3{
+.step{
     display: none;
+    padding: 1em
+}
+
+#step1{
+    display: block;
+}
+
+label{
+    font-weight: bold;
+}
+.inner_step{
+    margin: 20px 0;
+    padding: 1em;
 }

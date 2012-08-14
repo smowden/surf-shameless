@@ -1,9 +1,12 @@
 $(
   ->
-    $(".next_btn").click(
+
+    $(".next_btn").button().click(
       ->
-        curStep = $(@).parent().parent()
+        curStep = $(@).parent()
         curStepNo = parseInt(curStep.attr("step"), 10)
+        console.log("cur step no", curStepNo)
+
 
         if curStepNo == 1
           password = $("#ef_password").val()
@@ -14,13 +17,18 @@ $(
             localStorage["password"] = ""
           localStorage["passwordHint"] = $("#ef_hint").val()
 
-          curStep.hide()
-          $("#step2").show()
         else if curStepNo == 2
+          opMode = $("#step2 input[type='radio']:checked").val()
+          console.log("op mode", opMode)
+          if opMode != undefined
+            localStorage["opMode"] = parseInt(opMode, 10)
+          else
+            return alert("please select a mode of operation")
         else if curStepNo == 3
           localStorage["allowRemote"] = $("#ef_allow_remote").is(":checked")
-          curStep.hide()
-          $("#step3").show()
+
+        curStep.hide()
+        $("#step#{(curStepNo+1)}").show()
     )
 
     $("#finish").click(

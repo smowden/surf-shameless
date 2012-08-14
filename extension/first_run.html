@@ -4,19 +4,23 @@
 <head>
     <title>Setup eFilter aka. Embarrassment Filter</title>
     <link rel="stylesheet" href="css/first_run.css">
+    <link rel="stylesheet" type="text/css" href="css/Aristo.css" />
+
     <script type="text/javascript" src="js/pbkdf2.js"></script>
     <script type="text/javascript" src="js/jquery.min.js"></script>
+    <script type="text/javascript" src="js/jquery-ui-1.8.21.custom.min.js"></script>
     <script type="text/javascript" src="build/first_run.js"></script>
 </head>
 <body>
 
-<div id="body_wrapper">
+<div id="body_wrapper" class="ui-widget">
 
-    <div id="step1" class="step" step="1">
+    <div id="step1" class="step ui-corner-all ui-widget-content" step="1">
         <h1>
             Thank you for installing the embarrassment filter
         </h1>
-        <p>
+
+        <div class="inner_step ui-corner-all ui-widget-content">
             eFilter protects you from embarrassment by selectively deleting entries from your browsing history.
             Beyond that it allows you to add private bookmarks which are only visible after you enter your password.
             <br />
@@ -33,44 +37,50 @@
             <br />
             <b><i>Note: you can leave both fields empty, however it is recommended to use a password</i></b>
             <br />
-            <input type="submit" value="next" class="next_btn">
-        </p>
+            <br />
+        </div>
+        <input type="submit" value="next" class="next_btn">
     </div>
-    <div id="step2" class="step" step="2">
+    <div id="step2" class="step ui-corner-all ui-widget-content" step="2">
         <h1>
             Select the mode of operation
         </h1>
-        <p>
+        <div class="inner_step ui-corner-all ui-widget-content">
            eFilter implements two modes of operation, you have to choose one
+            <p></p>
+            <form id="op_mode_form" accept="" action="#">
+                <div>
+                    <input type="radio" value="1" name="op_mode" id="op_mode_retroactive" />
+                    <label for="op_mode_retroactive">Retroactive mode</label>
+                    <br />
+
+                    <b>Will delete blacklisted entries every time you start Chrome and close offending tabs</b>.<br />
+                    This is the least invasive mode. It will make sure your browsing history will look clean to
+                    other people who take a peak. Offending sites will still show up briefly in the recently closed tabs
+                    section.
+                </div>
+                <p></p>
+                <div>
+                    <input type="radio" value="0" name="op_mode" id="op_mode_preventive" />
+                    <label for="op_mode_preventive">Preventive mode</label>
+                    <br />
+
+                    <b>This will redirect blacklisted sites to a incognito window</b> whose contents will be discarded once you close
+                    the window. Just to be safe the extension will scan your history for offending entries and purge them.
+                    As this will pop up a new window each time you visit a blacklisted site this mode is not quite as seemless
+                    as one might wish.
+                </div>
+            </form>
             <br />
-            <div>
-                <input type="radio" id="mode_retroactive" group="op_mode" />
-                <h3>Retroactive mode</h3>
-                <br />
-                Will blacklisted entries every time you start Chrome and close offending tabs.<br />
-                This is the least invasive mode. It will make sure your browsing history will look clean to
-                other people who take a peak. Offending sites will still show up briefly in the recently closed tabs
-                section.
-            </div>
-            <div>
-                <input type="radio" id="mode_preventive" group="op_mode" />
-                <h3>Preventive mode</h3>
-                <br />
-                This will redirect blacklisted sites to a incognito window whose contents will be discarded once you close
-                the window. Just to be safe the extension will scan your history for offending entries and purge them.
-                As this will pop up a new window each time you visit a blacklisted site this mode is not quite as seemless
-                as one might wish.
-            </div>
             <br />
-            <br />
-            <input type="submit" value="next" class="next_btn">
-        </p>
+        </div>
+        <input type="submit" value="next" class="next_btn">
     </div>
-    <div id="step3" class="step" step="3">
+    <div id="step3" class="step ui-corner-all ui-widget-content" step="3">
         <h1>
             Help build the ultimate ranking of embarrassing sites
         </h1>
-        <p>
+        <div class="inner_step ui-corner-all ui-widget-content">
            To provide better lists in the future and for general amusement I would like to build a list of
            the most embarrassing sites on the web. To achieve that goal I would need you to agree to allow this
            extension to transmit sites you've added to your list.
@@ -84,17 +94,17 @@
             <br />
            <input type="checkbox" id="ef_allow_remote" /> <label for="ef_allow_remote">Allow transmitting my custom blacklist in an anonymous fashion</label>
             <br /><br />
-            <input type="submit" value="next" class="next_btn">
-        </p>
+        </div>
+        <input type="submit" value="next" class="next_btn">
     </div>
-    <div id="step4" class="step" step="4">
+    <div id="step4" class="step ui-corner-all ui-widget-content" step="4">
         <h1>
             Almost done...
         </h1>
-        <p>
+        <div class="inner_step ui-corner-all ui-widget-content">
             Alright we're all set now. A few words on how to use this extension.
             You will notice that a new entry has been added to your context menu (the thing that comes up
-            when you right click somewhere). Through the entry you can sites to your blacklist and to your private bookmarks.
+            when you right click somewhere). Through the entry you can add sites both to your blacklist and to your private bookmarks.
             Please note that these entries will always be the same even though site might be already present in your blacklist/bookmarks.
             This is simply to protect your privacy.
             To remove entries and to view your private bookmarks, right click the extension icon in the top right and select options.
@@ -104,8 +114,9 @@
             Clicking the icon will bring up a dialogue that will show you when the last cleanup was performed.
 
             <br /><br />
-            <input type="submit" value="Finish" id="finish" />
-        </p>
+
+        </div>
+        <input type="submit" value="Finish" id="finish" />
     </div>
 </div>
 </body>

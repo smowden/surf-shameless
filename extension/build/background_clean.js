@@ -1,15 +1,17 @@
 (function() {
-  var ContextMenu, InterceptMode, MyBlacklist, WipeMode, contextMenu, emptyList, interceptMode, myBlacklist, wipeMode,
+  var ContextMenu, InterceptMode, MyBlacklist, WipeMode, contextMenu, emptyList, interceptMode, myBlacklist, opMode, reloadAll, wipeMode,
     __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; };
 
   MyBlacklist = (function() {
-    var customBlacklist, settings, totalEnabled;
+    var customBlacklist, joinedBlacklist, settings, totalEnabled;
 
     MyBlacklist.prototype.readyState = false;
 
     totalEnabled = 0;
 
     customBlacklist = void 0;
+
+    joinedBlacklist = void 0;
 
     settings = {
       myAvailableLists: void 0,
@@ -35,8 +37,10 @@
       console.log("init...");
       storedSettings = this.loadSettings();
       if (storedSettings !== void 0) settings = storedSettings;
-      console.log(settings);
+      console.log("settings", settings);
       customBlacklist = this.getCustomLists();
+      joinedBlacklist = jQuery.extend(true, {}, customBlacklist);
+      console.log("custom blacklist", customBlacklist);
       this.readyState = false;
       if (settings.myAvailableLists === void 0) {
         this.getAvailableLists();
@@ -79,6 +83,7 @@
     };
 
     MyBlacklist.prototype.storeObfuscatedBlacklist = function() {
+      console.log("storing custom blacklist", customBlacklist);
       return localStorage["customBlacklist"] = CryptoJS.AES.encrypt(JSON.stringify(customBlacklist), localStorage["obfuKey"]).toString();
     };
 
@@ -86,10 +91,10 @@
       var hostname, parser;
       console.log("add to blacklist called with", type, entry);
       entry = entry.toLowerCase();
-      if (entry.indexOf("http://") === -1 && entry.indexOf("https://") === -1) {
-        entry = "http://" + entry;
-      }
       if (type === "url") {
+        if (entry.indexOf("http://") === -1 && entry.indexOf("https://") === -1) {
+          entry = "http://" + entry;
+        }
         parser = document.createElement('a');
         parser.href = entry;
         hostname = parser.hostname.replace("www.", "");
@@ -100,7 +105,7 @@
         return hostname;
       } else if (type === "keyword") {
         if (customBlacklist.keywords.indexOf(entry) === -1) {
-          customBlacklist.keywords.push();
+          customBlacklist.keywords.push(entry);
           return this.storeObfuscatedBlacklist();
         }
       }
@@ -116,14 +121,18 @@
     };
 
     MyBlacklist.prototype.getBlacklist = function() {
+      return joinedBlacklist;
+    };
+
+    MyBlacklist.prototype.getCustomList = function() {
       return customBlacklist;
     };
 
     MyBlacklist.prototype.isBlacklisted = function(string, type) {
       var lookupDir, s, _i, _len;
       string = string.toLowerCase();
-      if (type === "url") lookupDir = customBlacklist.urls;
-      if (type === "keyword") lookupDir = customBlacklist.keywords;
+      if (type === "url") lookupDir = joinedBlacklist.urls;
+      if (type === "keyword") lookupDir = joinedBlacklist.keywords;
       for (_i = 0, _len = lookupDir.length; _i < _len; _i++) {
         s = lookupDir[_i];
         if (type === "url") {
@@ -154,8 +163,8 @@
         if (settings.myAvailableLists) {
           console.log("myAvailableLists check");
           totalEnabled = 0;
-          console.log(settings.myAvailableLists);
-          console.log(settings.enabledLists);
+          console.log("available lists", settings.myAvailableLists);
+          console.log("enabled lists", settings.enabledLists);
           enabledListsIndex = 0;
           totalDisabled = 0;
           _ref = settings.myAvailableLists;
@@ -183,20 +192,18 @@
         return this.getLocalFile("lists/" + name, this.loadList, name, index);
       } else {
         if (listObject.type === "urls") {
-          customBlacklist.urls = customBlacklist.urls.concat(listObject.content);
+          joinedBlacklist.urls = joinedBlacklist.urls.concat(listObject.content);
         } else if (listObject.type === "keywords") {
-          customBlacklist.keywords = customBlacklist.keywords.concat(listObject.content);
+          joinedBlacklist.keywords = joinedBlacklist.keywords.concat(listObject.content);
         }
-        console.log(customBlacklist);
+        console.log("joined blacklist", joinedBlacklist);
         if (index === totalEnabled) return this.readyState = true;
       }
     };
 
     MyBlacklist.prototype.setListState = function(name, state) {
       if (typeof state === "boolean") settings.enabledLists[name] = state;
-      this.saveSettings();
-      console.log("enabled lists", settings.enabledLists);
-      return this.loadEnabledLists();
+      return this.saveSettings();
     };
 
     MyBlacklist.prototype.getLocalFile = function(path, callback, var1, var2) {
@@ -482,6 +489,7 @@
       iterations: 100
     }).toString();
     localStorage["firstRun"] = false;
+    localStorage["opMode"] = 1;
     emptyList = {
       keywords: [],
       urls: []
@@ -493,34 +501,43 @@
     });
   }
 
+  opMode = JSON.parse(localStorage["opMode"]);
+
   myBlacklist = new MyBlacklist();
-
-  wipeMode = new WipeMode(myBlacklist);
-
-  interceptMode = new InterceptMode(myBlacklist);
 
   contextMenu = new ContextMenu(myBlacklist);
 
+  wipeMode = new WipeMode(myBlacklist);
+
+  if (opMode === 0) {
+    interceptMode = new InterceptMode(myBlacklist);
+  } else if (opMode === 1) {
+    wipeMode.installListeners();
+  }
+
+  reloadAll = function() {
+    myBlacklist.init();
+    wipeMode.wipeHistory(void 0, true);
+    if (opMode === 0) return interceptMode.init();
+  };
+
   chrome.extension.onRequest.addListener(function(request, sender, sendResponse) {
+    console.log("got request", request);
     if (request.action === "getAvailableLists") {
       myBlacklist.getAvailableLists(void 0, true);
     } else if (request.action === "changeListState") {
       myBlacklist.setListState(request.listName, request.listState);
-      myBlacklist.init();
-      wipeMode.wipeHistory(void 0, true);
-      console.log(myBlacklist.getBlacklist("urls"));
-      console.log(myBlacklist.getBlacklist("keywords"));
+      reloadAll();
     } else if (request.action === "reInit") {
-      myBlacklist.init();
-      wipeMode.wipeHistory(void 0, true);
+      reloadAll();
     } else if (request.action === "addToBlacklist") {
       myBlacklist.addToBlacklist(request.type, request.entry);
-      sendResponse(myBlacklist.getBlacklist());
+      sendResponse(myBlacklist.getCustomList());
     } else if (request.action === "rmFromBlacklist") {
       myBlacklist.removeFromBlacklist(request.type, request.entry);
-      sendResponse(myBlacklist.getBlacklist());
+      sendResponse(myBlacklist.getCustomList());
     } else if (request.action === "getLists") {
-      sendResponse(myBlacklist.getBlacklist());
+      sendResponse(myBlacklist.getCustomList());
     }
     return console.log(request);
   });

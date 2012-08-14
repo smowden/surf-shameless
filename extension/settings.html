@@ -2,17 +2,12 @@
 <head>
     <title></title>
     <script type="text/javascript" src="js/jquery.min.js"></script>
+    <script type="text/javascript" src="js/jquery-ui-1.8.21.custom.min.js"></script>
     <script type="text/javascript" src="js/pbkdf2.js"></script>
     <script type="text/javascript" src="build/settings.js"></script>
-    <script type="text/javascript" src="js/jquery-ui-1.8.21.custom.min.js"></script>
     <link rel="stylesheet" type="text/css" href="css/settings.css" />
-    <link rel="stylesheet" type="text/css" href="css/jquery-ui-1.8.21.custom.css" />
+    <link rel="stylesheet" type="text/css" href="css/Aristo.css" />
 </head>
-<style type="text/css">
-    table {
-        max-width: 900px;
-    }
-</style>
 <body>
 <div id="lockdown" class="ui-widget ui-widget-content ui-corner-all">
     <h1>
@@ -21,7 +16,7 @@
     <input type="text" id="lockdown_password" value='' />
     <h5>hint: password is password for now ;)</h5>
 </div>
-<div id="body_wrapper">
+<div id="body_wrapper" class="ui-widget">
     <h1>
         Embarrassment filter
     </h1>
@@ -31,71 +26,86 @@
     <div id="nav_tabs" class="ui-tabs ui-widget ui-widget-content ui-corner-all">
         <ul class="ui-tabs-nav ui-helper-reset ui-helper-clearfix ui-widget-header ui-corner-all">
             <li class="ui-state-default ui-corner-top ui-tabs-selected ui-state-active">
-                <a href="#my_urls_tab">My specified urls</a>
+                <a href="#my_urls_tab">My URL blacklist</a>
             </li>
             <li class="ui-state-default ui-corner-top ui-tabs-selected ui-state-active">
-                <a href="#my_keywords_tab">My specified keywords</a>
+                <a href="#my_keywords_tab">My keyword blacklist</a>
             </li>
             <li class="ui-state-default ui-corner-top ui-tabs-selected ui-state-active">
                 <a href="#predefined_lists_tab">Predefined lists</a>
             </li>
             <li class="ui-state-default ui-corner-top ui-tabs-selected ui-state-active">
-                <a href="#change_password">Change your password</a>
+                <a href="#settings_tab">Settings</a>
             </li>
             <li class="ui-state-default ui-corner-top ui-tabs-selected ui-state-active">
-                <a href="#private_bookmarks">My private bookmarks</a>
+                <a href="#private_bookmarks_tab">Private bookmarks</a>
             </li>
         </ul>
         <div id="my_urls_tab">
-            <h2>Add new URL</h2>
-            <p>
-                Write the whole url for a specific page or just the domain to filter all domain specific URLS
-            </p>
-            <table border="1" id="my_urls">
-                <tbody></tbody>
-                <tfoot>
-                <tr>
-                    <td colspan="2">
-                        <input type="text" id="new_url_add">
-                        <label for="new_url_add">Add new URL</label>
-                        <input type="submit" id="add_new_url">
-                    </td>
-                </tr>
-                </tfoot>
-            </table>
+            <h2>Manage your URL blacklist</h2>
+            <div class="hint ui-state-highlight ui-corner-all">
+                <p>
+                    <span class="ui-icon ui-icon-info"></span>
+                    These are your blacklisted websites, these sites will not show up in your browsing history.
+                    You can add sites via the context menu or through the box at the bottom of this page.
+                </p>
+
+            </div>
+
+            <div id="my_urls" class="items_container ui-widget-content">
+                <div id="my_urls_inner">
+
+                </div>
+                <div class="add_footer">
+                    <label for="new_url_add">Add a new URL</label>
+                    <input type="text" id="new_url_add">
+                    <input type="submit" id="add_new_url">
+                </div>
+            </div>
         </div>
         <div id="my_keywords_tab">
-            <h2>Add new Keyword</h2>
-            <p>
-                write a keyword to insert it your personal ones
-            </p>
-            <table border="1" id="my_keywords">
-                <tbody></tbody>
-                <tfoot>
-                <tr>
-                    <td colspan="2">
+            <h2>Manage your keyword blacklist</h2>
+            <div class="hint ui-state-highlight ui-corner-all">
+                <p>
+                    <span class="ui-icon ui-icon-info"></span>
+                    History entries that contain blacklisted keywords in the title will be removed from your history
+                    (e.g. search engine queries)
+                </p>
 
-                        <input type="text" id="new_keyword_add">
-                        <label for="new_keyword_add">Add new keyword</label>
-                        <input type="submit" id="add_new_keyword">
-                    </td>
-                </tr>
-                </tfoot>
-            </table>
+            </div>
+            <div id="my_keywords" class="items_container ui-widget-content">
+                <div id="my_keywords_inner">
+
+                </div>
+                <div class="add_footer">
+                    <label for="new_url_add">Add a new keyword</label>
+                    <input type="text" id="new_keyword_add" >
+                    <input type="submit" id="add_new_keyword">
+                </div>
+            </div>
         </div>
         <div id="predefined_lists_tab">
             <h2>Predefined Lists</h2>
+
+            <div class="hint ui-state-highlight ui-corner-all">
+                <p>
+                    <span class="ui-icon ui-icon-info"></span>
+                    Predefined list are lists that come with the extension, you can add many items at once by checking
+                    the box.
+                </p>
+
+            </div>
             <table id="selected_lists" border="1">
                 <tbody></tbody>
             </table>
         </div>
-        <div id="change_password">
+        <div id="settings_tab">
             <h2>
                 Change your password
             </h2>
 
         </div>
-        <div id="private_bookmarks">
+        <div id="private_bookmarks_tab">
             <h2>
                 Change your password
             </h2>

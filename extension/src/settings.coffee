@@ -57,11 +57,10 @@ $(
 
             colsHtml = $("<div id='urls_#{name}' class='urls'></div>")
             toggleBtn = $("""<div class='toggle_urls_btn'>
-                              <a href='#'>
-                                <img src='images/show.png' class='toggle_urls_icon' />
-                                <span class='toggle_urls_caption'>Show list contents</span>
-                              </a>
+                                Show list contents
                             </div>""")
+            .button(icons: { primary: 'ui-icon-zoomin' })
+
             colsHtml.append(toggleBtn)
             for col in detailCols
               urlColumn = "<div class='urls_column'>#{col.join('<br />')}</div>"
@@ -76,21 +75,23 @@ $(
 
 
     # custom list stuff
-    getCustomList =  ->
+    getCustomList = (gclCallback) ->
       chrome.extension.sendRequest({"action": "getLists"},
         (lists) ->
           for type, listContents of lists
             console.log(type, listContents)
-            destination = $("#my_#{type} > tbody:last")
+            destination = $("#my_#{type}_inner")
             destination.children().remove()
             for item in listContents
-              td = $("""<td>
-                          <span class='#{type.replace("s", "")}'>#{item}</span>
-                          <a class='remove_#{type.replace("s", "")}_item' href='javascript:void(0)'>
-                            <img src='images/delete.png' />
+              removeBtn = $("""
+                          <a class='remove_#{type.replace("s", "")}_item remove_item' href='#' item='#{item}'>
+                            #{item}
                           </a>
-                        </td>""")
-              destination.append(td)
+                """)
+              destination.append(removeBtn)
+            $(".remove_item").button(icons: {secondary: "ui-icon-circle-close"})
+            if gclCallback
+              gclCallback()
       )
 
 
@@ -112,20 +113,24 @@ $(
 
     unlock = ->
       loadAvailableLists()
-      getCustomList("url")
-      getCustomList("keyword")
-      $("#body_wrapper").show()
-      $("#lockdown").hide()
+      getCustomList(
+        ->
+          $("#body_wrapper").show()
+          $("#lockdown").hide()
+      )
 
 
+
+    console.log("password length", localStorage["password"].length)
     if localStorage["password"].length == 0
+      console.log("unlocking")
       unlock()
 
     $('#nav_tabs').tabs()
 
     $('.remove_url_item').live('click', ->
-      customListRemove("url", $(@).parent().children("span").text())
-      $(@).parent().remove()
+      customListRemove("url", $(@).attr("item"))
+      $(@).remove()
     )
 
 
@@ -135,8 +140,8 @@ $(
     )
 
     $('.remove_keyword_item').live('click', ->
-      customListRemove("keyword", $(@).parent().children("span").text())
-      $(@).parent().remove()
+      customListRemove("keyword", $(@).attr("item"))
+      $(@).remove()
     )
 
     $('#add_new_url').click( ->
@@ -144,7 +149,6 @@ $(
         alert("Url field is emptry")
         return false
       customListAdd("url", $('#new_url_add').val())
-      $("#my_urls tbody").html("")
       getCustomList()
     )
     $('#add_new_keyword').click( ->
@@ -152,7 +156,6 @@ $(
         alert("Keyword field is emptry")
         return false
       customListAdd("keyword", $('#new_keyword_add').val())
-      $("#my_keywords tbody").html("")
       getCustomList()
     )
 
@@ -162,12 +165,12 @@ $(
         console.log(urlColumns)
         if not urlColumns.is(":visible")
           urlColumns.slideDown()
-          $(".toggle_urls_icon", @).attr("src", "images/hide.png")
-          $(".toggle_urls_caption", @).text("Hide list contents")
+          $(".ui-icon", @).removeClass("ui-icon-zoomin").addClass("ui-icon-zoomout")
+          $(".ui-button-text", @).text("Hide list contents")
         else
           urlColumns.slideUp()
-          $(".toggle_urls_icon", @).attr("src", "images/show.png")
-          $(".toggle_urls_caption", @).text("Show list contents")
+          $(".ui-icon", @).removeClass("ui-icon-zoomout").addClass("ui-icon-zoomin")
+          $(".ui-button-text", @).text("Show list contents")
         false
     )
 
@@ -178,4 +181,6 @@ $(
           unlock()
           $(@).remove()
     )
+
+    $('input[type="submit"]').button()
 )

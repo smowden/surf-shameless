@@ -6,6 +6,8 @@ class MyBlacklist
 
   totalEnabled = 0
   customBlacklist = undefined
+  joinedBlacklist = undefined
+
 
   settings =
     myAvailableLists: undefined
@@ -13,7 +15,7 @@ class MyBlacklist
     lastListUpdate: undefined
 
 
-  constructor: () ->
+  constructor: ->
     @init()
 
 
@@ -30,8 +32,12 @@ class MyBlacklist
     storedSettings = @loadSettings()
     settings = storedSettings if storedSettings != undefined
 
-    console.log(settings)
+    console.log("settings", settings)
     customBlacklist = @getCustomLists()
+    joinedBlacklist = jQuery.extend(true, {}, customBlacklist)
+
+
+    console.log("custom blacklist", customBlacklist)
 
     @readyState = false
     if settings.myAvailableLists == undefined
@@ -47,7 +53,7 @@ class MyBlacklist
       @loadEnabledLists()
 
 
-  getCustomLists: () ->
+  getCustomLists: ->
     lists =
       keywords: []
       urls: []
@@ -63,24 +69,25 @@ class MyBlacklist
 
     lists
 
-  loadSettings: () ->
+  loadSettings: ->
     if localStorage["efSettings"] != undefined and localStorage["efSettings"] != "undefined"
       storedSettings = JSON.parse(localStorage["efSettings"])
       return storedSettings
     return undefined
 
-  saveSettings: () ->
+  saveSettings: ->
     localStorage["efSettings"] = JSON.stringify(settings)
 
 
-  storeObfuscatedBlacklist: () ->
+  storeObfuscatedBlacklist: ->
+    console.log("storing custom blacklist", customBlacklist)
     localStorage["customBlacklist"] = CryptoJS.AES.encrypt(JSON.stringify(customBlacklist), localStorage["obfuKey"]).toString()
 
   addToBlacklist: (type, entry) ->
     console.log("add to blacklist called with", type, entry)
     entry = entry.toLowerCase()
-    entry = "http://#{entry}" if entry.indexOf("http://") == -1 and entry.indexOf("https://") == -1
     if type == "url"
+      entry = "http://#{entry}" if entry.indexOf("http://") == -1 and entry.indexOf("https://") == -1
       parser = document.createElement('a');
       parser.href = entry
       hostname = parser.hostname.replace("www.", "")
@@ -90,7 +97,7 @@ class MyBlacklist
       return hostname
     else if type == "keyword"
       if customBlacklist.keywords.indexOf(entry) == -1
-        customBlacklist.keywords.push()
+        customBlacklist.keywords.push(entry)
         @storeObfuscatedBlacklist()
 
   removeFromBlacklist: (type, entry) ->
@@ -102,13 +109,16 @@ class MyBlacklist
     @storeObfuscatedBlacklist()
 
 
-  getBlacklist: () ->
+  getBlacklist:  ->
+    joinedBlacklist
+
+  getCustomList: ->
     customBlacklist
 
   isBlacklisted: (string, type) ->
     string = string.toLowerCase()
-    lookupDir = customBlacklist.urls if type == "url"
-    lookupDir = customBlacklist.keywords if type == "keyword"
+    lookupDir = joinedBlacklist.urls if type == "url"
+    lookupDir = joinedBlacklist.keywords if type == "keyword"
 
     for s in lookupDir
       if type == "url"
@@ -127,14 +137,15 @@ class MyBlacklist
       settings.myAvailableLists = availableLists
       @saveSettings()
 
-  loadEnabledLists: () =>
+  loadEnabledLists: =>
+    # minor bug, once a list is enabled it is loaded twice into the joined lists
     if settings.enabledLists
       console.log("enabledLists check")
       if settings.myAvailableLists
         console.log("myAvailableLists check")
         totalEnabled = 0
-        console.log(settings.myAvailableLists)
-        console.log(settings.enabledLists)
+        console.log("available lists", settings.myAvailableLists)
+        console.log("enabled lists", settings.enabledLists)
 
         enabledListsIndex = 0
         totalDisabled = 0
@@ -162,10 +173,10 @@ class MyBlacklist
       @getLocalFile("lists/#{name}", @loadList, name, index)
     else
       if listObject.type == "urls"
-        customBlacklist.urls = customBlacklist.urls.concat(listObject.content)
+        joinedBlacklist.urls = joinedBlacklist.urls.concat(listObject.content)
       else if listObject.type == "keywords"
-        customBlacklist.keywords = customBlacklist.keywords.concat(listObject.content)
-      console.log(customBlacklist)
+        joinedBlacklist.keywords = joinedBlacklist.keywords.concat(listObject.content)
+      console.log("joined blacklist", joinedBlacklist)
       if index == totalEnabled
         @readyState = true
 
@@ -173,8 +184,6 @@ class MyBlacklist
     if typeof state == "boolean"
       settings.enabledLists[name] = state
     @saveSettings()
-    console.log("enabled lists", settings.enabledLists)
-    @loadEnabledLists()
 
   getLocalFile: (path, callback, var1, var2) ->
     xhr = new XMLHttpRequest()
@@ -375,7 +384,6 @@ class InterceptMode
     console.log("tmp filter:", tmpFilter)
     tmpFilter
 
-
 class ContextMenu
   constructor: (@myBlacklist) ->
     parent = chrome.contextMenus.create({"title": "Embarrassment Filter"})
@@ -393,6 +401,7 @@ class ContextMenu
 if localStorage["firstRun"] == undefined
   localStorage["obfuKey"] = CryptoJS.PBKDF2(Math.random().toString(36).substring(2), "efilter", { keySize: 256/32, iterations: 100 }).toString()
   localStorage["firstRun"] = false
+  localStorage["opMode"] = 1
   emptyList =
     keywords: []
     urls: []
@@ -400,35 +409,40 @@ if localStorage["firstRun"] == undefined
   localStorage["totalRemoved"] = 0
   chrome.tabs.create({url: "first_run.html"})
 
-
+opMode = JSON.parse(localStorage["opMode"]) # 0 - preventive, 1 - retroactive
 myBlacklist = new MyBlacklist()
-wipeMode = new WipeMode(myBlacklist)
-interceptMode = new InterceptMode(myBlacklist)
 contextMenu = new ContextMenu(myBlacklist)
+wipeMode = new WipeMode(myBlacklist)
 
+if opMode == 0
+  interceptMode = new InterceptMode(myBlacklist)
+else if opMode == 1
+  wipeMode.installListeners()
+
+reloadAll = ->
+  myBlacklist.init()
+  wipeMode.wipeHistory(undefined, true)
+  interceptMode.init() if opMode == 0
 
 
 chrome.extension.onRequest.addListener(
   (request, sender, sendResponse) ->
+    console.log("got request", request)
     if request.action == "getAvailableLists"
       myBlacklist.getAvailableLists(undefined,true)
     else if request.action == "changeListState"
       myBlacklist.setListState(request.listName, request.listState)
-      myBlacklist.init()
-      wipeMode.wipeHistory(undefined, true)
-      console.log(myBlacklist.getBlacklist("urls"))
-      console.log(myBlacklist.getBlacklist("keywords"))
+      reloadAll()
     else if request.action == "reInit"
-      myBlacklist.init()
-      wipeMode.wipeHistory(undefined, true)
+      reloadAll()
     else if request.action == "addToBlacklist"
       myBlacklist.addToBlacklist(request.type, request.entry)
-      sendResponse(myBlacklist.getBlacklist())
+      sendResponse(myBlacklist.getCustomList())
     else if request.action == "rmFromBlacklist"
       myBlacklist.removeFromBlacklist(request.type, request.entry)
-      sendResponse(myBlacklist.getBlacklist())
+      sendResponse(myBlacklist.getCustomList())
     else if request.action == "getLists"
-      sendResponse(myBlacklist.getBlacklist())
+      sendResponse(myBlacklist.getCustomList())
 
     console.log(request)
 )
