@@ -49,3 +49,8 @@
 .items_container .remove_item{
     margin: 0.13em !important;
 }
+
+#private_bookmarks .delete_bookmark_icon{
+    display: inline-block;
+    cursor: pointer;
+}

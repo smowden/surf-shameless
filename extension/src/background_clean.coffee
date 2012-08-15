@@ -384,19 +384,106 @@ class InterceptMode
     console.log("tmp filter:", tmpFilter)
     tmpFilter
 
+class PrivateBookmarks
+
+  bookmarks = undefined
+
+  constructor: ->
+    @loadBookmarks()
+
+  loadBookmarks: ->
+    possibleBookmarks = CryptoJS.AES.decrypt(localStorage["privateBookmarks"], localStorage["obfuKey"], "bookmarks")
+    .toString(CryptoJS.enc.Utf8)
+
+    if possibleBookmarks.length > 0
+      try
+        bookmarks = JSON.parse(possibleBookmarks)
+      catch e
+        alert e
+    bookmarks
+
+  saveBookmarks: ->
+    localStorage["privateBookmarks"] = CryptoJS.AES.encrypt(JSON.stringify(bookmarks), localStorage["obfuKey"], "bookmarks").toString()
+
+  getBookmarks: ->
+    bookmarks
+
+  addBookmark: (title, url) ->
+    bookmark = {title: title, url: url}
+    bookmarks.push(bookmark)
+    console.log("saving bookmark", bookmark)
+    console.log("private bookmarks", bookmarks)
+    @saveBookmarks()
+
+  removeBookmark: (url) ->
+    for bookmark, index in bookmarks
+      if bookmark.url == url
+        bookmarks.splice(index, 1)
+        @saveBookmarks()
+        return true
+    false
+
+
+  injectDialog: (tab) ->
+    dialogHtml = """
+      <div id="bookmark_dialog" title="Add a bookmark">
+        <label for="bookmark_title">Name</label><br/>
+        <input type="text" style="width:250px;" id="ef_bookmark_title" value="#{tab.title}"/>
+    </div>
+    """.replace(/(\r\n|\n|\r)/gm,"");
+
+    injectScript =
+      """
+      $(function(){
+        $("body").append($('#{dialogHtml}'));
+        $('#bookmark_dialog').dialog({
+          autoOpen: true,
+          width: 300,
+          buttons: {
+            "Save": function() {
+               chrome.extension.sendRequest({'action': 'addBookmark', 'title': $('#ef_bookmark_title').val(), 'url': '#{tab.url}'});
+               $(this).dialog("close");
+             },
+            "Cancel": function() {
+              $(this).dialog("close");
+            }
+          },
+          modal: true
+        });
+      })
+             """
+
+    #console.log("injecting script", injectScript)
+
+    chrome.tabs.executeScript(tab.id, {"file": "js/jquery.min.js"}, ->
+      chrome.tabs.executeScript(tab.id, {"file": "js/jquery-ui-1.8.21.custom.min.js"}, ->
+        chrome.tabs.insertCSS(tab.id, {"file": "css/Aristo.css"}, ->
+          chrome.tabs.executeScript(tab.id, {"code": injectScript})
+        )
+      )
+    )
+
+
+
+
+
+
 class ContextMenu
-  constructor: (@myBlacklist) ->
+  constructor: (@myBlacklist, @privateBookmarks) ->
     parent = chrome.contextMenus.create({"title": "Embarrassment Filter"})
 
     child1 = chrome.contextMenus.create(
       {"title": "Don't log my visits to this site", "parentId": parent, "onclick": @contextMenuAddSite})
 
     child2 = chrome.contextMenus.create(
-      {"title": "Make this a private bookmark", "parentId": parent, "onclick": @contextMenuAddSite})
+      {"title": "Make this a private bookmark", "parentId": parent, "onclick": @addBookmark})
 
   contextMenuAddSite: (info, tab) ->
     hostname = myBlacklist.addToBlacklist("url", tab.url)
     alert "Added #{hostname} to your blacklist"
+
+  addBookmark: (info, tab) ->
+    privateBookmarks.injectDialog(tab)
 
 if localStorage["firstRun"] == undefined
   localStorage["obfuKey"] = CryptoJS.PBKDF2(Math.random().toString(36).substring(2), "efilter", { keySize: 256/32, iterations: 100 }).toString()
@@ -406,13 +493,18 @@ if localStorage["firstRun"] == undefined
     keywords: []
     urls: []
   localStorage["customBlacklist"] = CryptoJS.AES.encrypt(JSON.stringify(emptyList), localStorage["obfuKey"]).toString()
+  localStorage["privateBookmarks"] = CryptoJS.AES.encrypt(JSON.stringify([]), localStorage["obfuKey"], "bookmarks").toString()
   localStorage["totalRemoved"] = 0
+
+if localStorage["setupFinished"] == undefined
   chrome.tabs.create({url: "first_run.html"})
 
 opMode = JSON.parse(localStorage["opMode"]) # 0 - preventive, 1 - retroactive
 myBlacklist = new MyBlacklist()
-contextMenu = new ContextMenu(myBlacklist)
 wipeMode = new WipeMode(myBlacklist)
+privateBookmarks = new PrivateBookmarks()
+contextMenu = new ContextMenu(myBlacklist, privateBookmarks)
+
 
 if opMode == 0
   interceptMode = new InterceptMode(myBlacklist)
@@ -443,6 +535,12 @@ chrome.extension.onRequest.addListener(
       sendResponse(myBlacklist.getCustomList())
     else if request.action == "getLists"
       sendResponse(myBlacklist.getCustomList())
+    else if request.action == "addBookmark"
+      privateBookmarks.addBookmark(request.title, request.url)
+    else if request.action == "rmBookmark"
+      privateBookmarks.removeBookmark(request.url)
+    else if request.action == "getBookmarks"
+      sendResponse(privateBookmarks.getBookmarks())
 
     console.log(request)
 )

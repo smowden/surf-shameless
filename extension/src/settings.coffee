@@ -73,6 +73,28 @@ $(
             $('#selected_lists > tbody:last').append(detailRow)
         xhr.send()
 
+    getPrivateBookmarks = () ->
+      chrome.extension.sendRequest({"action": "getBookmarks"},
+        (bookmarks) ->
+          $("#private_bookmarks").children().remove()
+          for bookmark in bookmarks
+            bookmarkRepr = """<li class="bookmark">
+            <a href="#{bookmark.url}" target="_blank">#{bookmark.title}</a>
+
+            <div class="delete_bookmark_icon ui-state-default ui-corner-all">
+                         <span class="ui-icon ui-icon-closethick"></span>
+
+            </div>
+            </li> """
+            $("#private_bookmarks").append(bookmarkRepr)
+
+          $(".delete_bookmark_icon").hover(
+            ->
+              $(@).addClass('ui-state-hover')
+            , ->
+              $(@).removeClass('ui-state-hover')
+          )
+      )
 
     # custom list stuff
     getCustomList = (gclCallback) ->
@@ -115,6 +137,8 @@ $(
       loadAvailableLists()
       getCustomList(
         ->
+          getPrivateBookmarks()
+          $("#e_total_count").text(localStorage["totalRemoved"])
           $("#body_wrapper").show()
           $("#lockdown").hide()
       )
@@ -133,6 +157,11 @@ $(
       $(@).remove()
     )
 
+    $('.delete_bookmark_icon').live("click", ->
+
+      chrome.extension.sendRequest({"action": "rmBookmark", "url": $("a", $(@).parent()).attr("href")})
+      $(@).parent().remove()
+    )
 
     $(".list").live("change", ->
       state = $(@).is(':checked')
