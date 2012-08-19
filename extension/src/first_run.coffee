@@ -5,7 +5,7 @@ $(
       ->
         curStep = $(@).parent()
         curStepNo = parseInt(curStep.attr("step"), 10)
-        console.log("cur step no", curStepNo)
+        #console.log("cur step no", curStepNo)
 
 
         if curStepNo == 1
@@ -19,7 +19,7 @@ $(
 
         else if curStepNo == 2
           opMode = $("#step2 input[type='radio']:checked").val()
-          console.log("op mode", opMode)
+          #console.log("op mode", opMode)
           if opMode != undefined
             localStorage["opMode"] = parseInt(opMode, 10)
           else

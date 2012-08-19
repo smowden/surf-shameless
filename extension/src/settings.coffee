@@ -4,8 +4,8 @@ $(
 
     loadAvailableLists = () ->
       if localStorage["efSettings"] == "undefined" or typeof localStorage["efSettings"] == "undefined"
-        console.log("set timeout")
-        chrome.extension.sendRequest({"action": "getAvailableLists"}, (response) -> console.log("response", response) )
+        #console.log("set timeout")
+        chrome.extension.sendRequest({"action": "getAvailableLists"})
         setTimeout(
           () =>
               loadAvailableLists()
@@ -23,7 +23,7 @@ $(
     listInitializer = () ->
       settings = JSON.parse(localStorage["efSettings"])
       xhr = new XMLHttpRequest()
-      console.log("list initializer start")
+      #console.log("list initializer start")
       for name in settings.myAvailableLists
         xhrs = {}
         xhr.open("GET", "lists/#{name}", false)
@@ -36,7 +36,7 @@ $(
             if settings.enabledLists
               state = settings.enabledLists[name]
               checked = "checked='checked'" if state
-            console.log(listObj)
+            #console.log(listObj)
 
 
 
@@ -102,7 +102,7 @@ $(
       chrome.extension.sendRequest({"action": "getLists"},
         (lists) ->
           for type, listContents of lists
-            console.log(type, listContents)
+            #console.log(type, listContents)
             destination = $("#my_#{type}_inner")
             destination.children().remove()
             for item in listContents
@@ -153,9 +153,9 @@ $(
       )
 
 
-    console.log("password length", localStorage["password"].length)
+    #console.log("password length", localStorage["password"].length)
     if localStorage["password"].length == 0
-      console.log("unlocking")
+      #console.log("unlocking")
       $("#no_password_warning").show()
       unlock()
 
@@ -200,7 +200,7 @@ $(
     $('.toggle_urls_btn').live( 'click',
       ->
         urlColumns = $(@).parent().children(".urls_column")
-        console.log(urlColumns)
+        #console.log(urlColumns)
         if not urlColumns.is(":visible")
           urlColumns.slideDown()
           $(".ui-icon", @).removeClass("ui-icon-zoomin").addClass("ui-icon-zoomout")
