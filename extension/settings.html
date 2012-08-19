@@ -14,15 +14,24 @@
         Please enter your password
     </h1>
     <input type="text" id="lockdown_password" value='' />
-    <h5>hint: password is password for now ;)</h5>
+    <h5 id="hint_box"><a id="show_hint" href="#">Show hint</a></h5>
 </div>
 <div id="body_wrapper" class="ui-widget">
     <h1>
-        Embarrassment filter
+        (surf) shameless
     </h1>
     <h3>
-        This extension has prevented <span id="e_total_count"></span> stains on your history
+        Thanks to this extension <span id="e_total_count"></span> private moments will stay private
     </h3>
+
+    <div class="hint ui-state-error ui-corner-all" id="no_password_warning">
+        <p>
+            <span class="ui-icon ui-icon-info"></span>
+            <b>You don't have a password</b>. It is recommended to use one. To set it up go to the settings panel.
+        </p>
+
+    </div>
+
     <div id="nav_tabs" class="ui-tabs ui-widget ui-widget-content ui-corner-all">
         <ul class="ui-tabs-nav ui-helper-reset ui-helper-clearfix ui-widget-header ui-corner-all">
             <li class="ui-state-default ui-corner-top ui-tabs-selected ui-state-active">
@@ -59,7 +68,7 @@
                 <div class="add_footer">
                     <label for="new_url_add">Add a new URL</label>
                     <input type="text" id="new_url_add">
-                    <input type="submit" id="add_new_url">
+                    <input type="submit" id="add_new_url" value="Add">
                 </div>
             </div>
         </div>
@@ -80,7 +89,7 @@
                 <div class="add_footer">
                     <label for="new_url_add">Add a new keyword</label>
                     <input type="text" id="new_keyword_add" >
-                    <input type="submit" id="add_new_keyword">
+                    <input type="submit" id="add_new_keyword" value="Add">
                 </div>
             </div>
         </div>
@@ -101,15 +110,56 @@
         </div>
         <div id="settings_tab">
             <h2>
-                Change your password
+                Settings
             </h2>
+
+            <label for="new_password">Set a new password:</label>
+            <input type="password" id="new_password"> <input type="submit" value="Update password" id="update_password">
+
+            <p></p>
+            <p></p>
+            (surf) shameless implements two modes of operation, you have to choose one
+            <p></p>
+
+            <form id="op_mode_form" accept="" action="#">
+                <div>
+                    <input type="radio" value="1" name="op_mode" id="op_mode_retroactive"/>
+                    <label for="op_mode_retroactive">Retroactive mode</label>
+                    <br />
+
+                    <b>Will delete blacklisted entries every time you start Chrome and close offending tabs</b>.<br />
+                    This is the least invasive mode. It will make sure your browsing history will look clean to
+                    other people who take a peak. Offending sites will still show up briefly in the recently closed tabs
+                    section.
+                </div>
+                <p></p>
+                <div>
+                    <input type="radio" value="0" name="op_mode" id="op_mode_preventive" />
+                    <label for="op_mode_preventive">Preventive mode</label>
+                    <br />
+
+                    <b>This will redirect blacklisted sites to a incognito window</b> whose contents will be discarded once you close
+                    the window. Just to be safe the extension will scan your history for offending entries and purge them.
+                    As this will pop up a new window each time you visit a blacklisted site this mode is not quite as seemless
+                    as one might wish.
+                </div>
+            </form>
+            <p></p>
+            <input type="checkbox" id="ef_allow_remote"/> <label for="ef_allow_remote">Allow transmitting my custom blacklist anonymously to improve future versions of this extension</label>
 
         </div>
         <div id="private_bookmarks_tab">
             <h2>
                 Private bookmarks
             </h2>
+            <div class="hint ui-state-error ui-corner-all" id="no_bookmarks_warning">
+                <p>
+                    <span class="ui-icon ui-icon-info"></span>
+                    You don't have any bookmarks. To add a site to your private bookmarks use the right click context
+                    menu ( (surf) shameless -> Make this a private bookmark )
+                </p>
 
+            </div>
             <ul id="private_bookmarks">
             </ul>
         </div>

@@ -1,6 +1,6 @@
 {
     "name": "(surf) shameless",
-    "version": "0.9",
+    "version": "0.9.1",
     "manifest_version": 2,
     "description": "This extension saves you from embarrassment",
     "browser_action": {

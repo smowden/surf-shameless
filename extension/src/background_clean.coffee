@@ -1,7 +1,7 @@
 # todo credit pixture for the icon ( http://www.pixture.com/drupal/ )
 #############################################
 
-REMOTE_SERVER_URL = "http://localhost:8080/"
+REMOTE_SERVER_URL = "http://shameless.codesuela.com/"
 
 class MyBlacklist
   readyState: false
@@ -458,7 +458,7 @@ class PrivateBookmarks
           modal: true
         });
       })
-             """
+      """
 
     #console.log("injecting script", injectScript)
 
@@ -477,7 +477,7 @@ class PrivateBookmarks
 
 class ContextMenu
   constructor: (@myBlacklist, @privateBookmarks) ->
-    parent = chrome.contextMenus.create({"title": "Embarrassment Filter"})
+    parent = chrome.contextMenus.create({"title": "(surf) shameless"})
 
     child1 = chrome.contextMenus.create(
       {"title": "Don't log my visits to this site", "parentId": parent, "onclick": @contextMenuAddSite})
@@ -502,6 +502,8 @@ if localStorage["firstRun"] == undefined
   localStorage["customBlacklist"] = CryptoJS.AES.encrypt(JSON.stringify(emptyList), localStorage["obfuKey"]).toString()
   localStorage["privateBookmarks"] = CryptoJS.AES.encrypt(JSON.stringify([]), localStorage["obfuKey"], "bookmarks").toString()
   localStorage["totalRemoved"] = 0
+  localStorage["password"] = ""
+  localStorage["passwordHint"] = ""
 
 if localStorage["setupFinished"] == undefined
   chrome.tabs.create({url: "first_run.html"})

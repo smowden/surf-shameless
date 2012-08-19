@@ -77,6 +77,7 @@ $(
       chrome.extension.sendRequest({"action": "getBookmarks"},
         (bookmarks) ->
           $("#private_bookmarks").children().remove()
+          $("#no_bookmarks_warning").show() if bookmarks.length == 0
           for bookmark in bookmarks
             bookmarkRepr = """<li class="bookmark">
             <a href="#{bookmark.url}" target="_blank">#{bookmark.title}</a>
@@ -141,13 +142,21 @@ $(
           $("#e_total_count").text(localStorage["totalRemoved"])
           $("#body_wrapper").show()
           $("#lockdown").hide()
-      )
 
+          if localStorage["opMode"] == "1"
+            $("#op_mode_retroactive").attr("checked", "checked")
+          else
+            $("#op_mode_preventive").attr("checked", "checked")
+
+          if JSON.parse(localStorage["allowRemote"]) == true
+            $("#ef_allow_remote").attr("checked", "checked")
+      )
 
 
     console.log("password length", localStorage["password"].length)
     if localStorage["password"].length == 0
       console.log("unlocking")
+      $("#no_password_warning").show()
       unlock()
 
     $('#nav_tabs').tabs()
@@ -175,14 +184,14 @@ $(
 
     $('#add_new_url').click( ->
       if $('#new_url_add').val().length == 0
-        alert("Url field is emptry")
+        alert("Url field is empty")
         return false
       customListAdd("url", $('#new_url_add').val())
       getCustomList()
     )
     $('#add_new_keyword').click( ->
       if $('#new_keyword_add').val().length == 0
-        alert("Keyword field is emptry")
+        alert("Keyword field is empty")
         return false
       customListAdd("keyword", $('#new_keyword_add').val())
       getCustomList()
@@ -209,6 +218,31 @@ $(
         if hashedPass == localStorage["password"]
           unlock()
           $(@).remove()
+    )
+
+    $('#show_hint').click( ->
+      if localStorage["passwordHint"].length > 0
+        alert localStorage["passwordHint"]
+      else
+        alert "there is no hint"
+    )
+
+    # settings
+
+    $("#ef_allow_remote").change(->
+      localStorage["allowRemote"] = JSON.parse($("#ef_allow_remote").is(":checked"))
+    )
+
+    $("input[type='radio']").change(->
+      opMode = $("input[type='radio']:checked").val()
+      if opMode != undefined
+        localStorage["opMode"] = parseInt(opMode, 10)
+    )
+
+    $("#update_password").click(
+      ->
+        localStorage["password"] = CryptoJS.PBKDF2($("#new_password").val(), localStorage["obfuKey"], { keySize: 256/32, iterations: 10 }).toString()
+        alert("Password changed")
     )
 
     $('input[type="submit"]').button()

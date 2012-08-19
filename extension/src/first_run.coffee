@@ -33,7 +33,7 @@ $(
 
     $("#finish").click(
       ->
-        chrome.tabs.create({url: "settings.html"})
+        chrome.tabs.create({url: "settings.html#predefined_lists_tab"})
         localStorage["setupFinished"] = true
         window.close()
     )

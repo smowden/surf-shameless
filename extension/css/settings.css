@@ -54,3 +54,7 @@
     display: inline-block;
     cursor: pointer;
 }
+
+#no_password_warning, #no_bookmarks_warning{
+    display: none;
+}
