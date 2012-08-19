@@ -1,6 +1,8 @@
 # todo credit pixture for the icon ( http://www.pixture.com/drupal/ )
 #############################################
 
+REMOTE_SERVER_URL = "http://localhost:8080/"
+
 class MyBlacklist
   readyState: false
 
@@ -94,6 +96,11 @@ class MyBlacklist
       if customBlacklist.urls.indexOf(hostname) == -1
         customBlacklist.urls.push(hostname)
         @storeObfuscatedBlacklist()
+
+        if JSON.parse(localStorage["allowRemote"])
+          $.post(
+            "#{REMOTE_SERVER_URL}submit/", {url: hostname}
+          )
       return hostname
     else if type == "keyword"
       if customBlacklist.keywords.indexOf(entry) == -1

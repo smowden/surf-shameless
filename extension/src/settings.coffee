@@ -73,7 +73,7 @@ $(
             $('#selected_lists > tbody:last').append(detailRow)
         xhr.send()
 
-    getPrivateBookmarks = () ->
+    getPrivateBookmarks = ->
       chrome.extension.sendRequest({"action": "getBookmarks"},
         (bookmarks) ->
           $("#private_bookmarks").children().remove()
