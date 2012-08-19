@@ -1,7 +1,7 @@
 (function() {
 
   $(function() {
-    var blacklistReInit, changeListState, customListAdd, customListRemove, getCustomList, getPrivateBookmarks, listInitializer, loadAvailableLists, unlock;
+    var blacklistReInit, changeListState, customListAdd, customListRemove, getCustomList, getPrivateBookmarks, listInitializer, loadAvailableLists, rng, unlock;
     loadAvailableLists = function() {
       var _this = this;
       if (localStorage["efSettings"] === "undefined" || typeof localStorage["efSettings"] === "undefined") {
@@ -257,6 +257,8 @@
       }).toString();
       return alert("Password changed");
     });
+    rng = Math.random();
+    if (rng < 0.22) $("#lovebox").show();
     return $('input[type="submit"]').button();
   });
 

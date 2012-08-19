@@ -245,5 +245,10 @@ $(
         alert("Password changed")
     )
 
+
+    #lovebox
+    rng = Math.random()
+    $("#lovebox").show() if rng < 0.22
+
     $('input[type="submit"]').button()
 )

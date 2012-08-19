@@ -19,3 +19,10 @@ label{
     margin: 20px 0;
     padding: 1em;
 }
+
+#lovebox{
+    width: 700px;
+    margin: auto;
+    border: 0;
+    height: 280px;
+}
