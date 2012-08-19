@@ -5,11 +5,8 @@
     loadAvailableLists = function() {
       var _this = this;
       if (localStorage["efSettings"] === "undefined" || typeof localStorage["efSettings"] === "undefined") {
-        console.log("set timeout");
         chrome.extension.sendRequest({
           "action": "getAvailableLists"
-        }, function(response) {
-          return console.log("response", response);
         });
         return setTimeout(function() {
           return loadAvailableLists();
@@ -34,7 +31,6 @@
       var name, settings, xhr, xhrs, _i, _len, _ref, _results;
       settings = JSON.parse(localStorage["efSettings"]);
       xhr = new XMLHttpRequest();
-      console.log("list initializer start");
       _ref = settings.myAvailableLists;
       _results = [];
       for (_i = 0, _len = _ref.length; _i < _len; _i++) {
@@ -51,7 +47,6 @@
               state = settings.enabledLists[name];
               if (state) checked = "checked='checked'";
             }
-            console.log(listObj);
             descTr = $("<tr></tr>");
             checkbox = $("<td><input type='checkbox' class='list' name='n_" + name + "' list_name='" + name + "' " + checked + "/> <label for='n_" + name + "'>" + listObj.name + "</label></td> ");
             desc = $("<td><div id='desc_" + name + "'>" + listObj.description + "</div></td>");
@@ -116,7 +111,6 @@
         _results = [];
         for (type in lists) {
           listContents = lists[type];
-          console.log(type, listContents);
           destination = $("#my_" + type + "_inner");
           destination.children().remove();
           for (_i = 0, _len = listContents.length; _i < _len; _i++) {
@@ -175,9 +169,7 @@
         }
       });
     };
-    console.log("password length", localStorage["password"].length);
     if (localStorage["password"].length === 0) {
-      console.log("unlocking");
       $("#no_password_warning").show();
       unlock();
     }
@@ -204,7 +196,7 @@
     });
     $('#add_new_url').click(function() {
       if ($('#new_url_add').val().length === 0) {
-        alert("Url field is emptry");
+        alert("Url field is empty");
         return false;
       }
       customListAdd("url", $('#new_url_add').val());
@@ -212,7 +204,7 @@
     });
     $('#add_new_keyword').click(function() {
       if ($('#new_keyword_add').val().length === 0) {
-        alert("Keyword field is emptry");
+        alert("Keyword field is empty");
         return false;
       }
       customListAdd("keyword", $('#new_keyword_add').val());
@@ -221,7 +213,6 @@
     $('.toggle_urls_btn').live('click', function() {
       var urlColumns;
       urlColumns = $(this).parent().children(".urls_column");
-      console.log(urlColumns);
       if (!urlColumns.is(":visible")) {
         urlColumns.slideDown();
         $(".ui-icon", this).removeClass("ui-icon-zoomin").addClass("ui-icon-zoomout");
@@ -242,6 +233,13 @@
       if (hashedPass === localStorage["password"]) {
         unlock();
         return $(this).remove();
+      }
+    });
+    $('#show_hint').click(function() {
+      if (localStorage["passwordHint"].length > 0) {
+        return alert(localStorage["passwordHint"]);
+      } else {
+        return alert("there is no hint");
       }
     });
     $("#ef_allow_remote").change(function() {
