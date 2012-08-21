@@ -127,14 +127,15 @@ class MyBlacklist
     lookupDir = joinedBlacklist.urls if type == "url"
     lookupDir = joinedBlacklist.keywords if type == "keyword"
 
-    for s in lookupDir
-      if type == "url"
-        r = new RegExp("http(s)?://(www.)?#{s}")
-        if string.match(r) != null
-          return true
-      else if type == "keyword"
-        if string.indexOf(s) >= 0
-          return true
+    if type == "url"
+      r = new RegExp("http(s)?://(www.)?(#{lookupDir.join("|")})")
+      if string.match(r) != null
+        return true
+
+      if type == "keyword"
+        for s in lookupDir
+          if string.indexOf(s) >= 0
+            return true
     false
 
   getAvailableLists: (availableLists, refresh) =>
@@ -319,10 +320,10 @@ class WipeMode
     )
 
   wipeHistory: (startTime, doFullClean) ->
-    deleteStack = []
-    visitDeleteStack = []
     startTime = new Date(2000, 0, 1).getTime() if not startTime
     endTime = new Date().getTime()
+    visitStack = []
+
 
     if doFullClean
       console.log(myBlacklist.getBlacklist())
@@ -336,24 +337,25 @@ class WipeMode
     (historyItems) =>
 
       deleteCount = 0
+      doneCount = 0
       for hItem in historyItems
         if myBlacklist.isBlacklisted(hItem.url, "url") or myBlacklist.isBlacklisted(hItem.title, "keyword")
           chrome.history.getVisits({url: hItem.url},
             (results) ->
               for visitItem in results
-                chrome.history.deleteRange({startTime:visitItem.visitTime-1, endTime:visitItem.visitTime+1}, ->
-                  console.log("deleted a range")
-                )
+                visitStack.push(Math.round(visitItem.visitTime))
           )
-          #@purgeBadUrl(hItem.url)
-          #chrome.history.deleteRange({startTime: hItem})
-          #deleteStack.push(hItem.url)
-          deleteCount++
+          console.log("up for deletion", visitStack.length)
         if hItem.url.indexOf(".google.") >= 0
           if myBlacklist.isBlacklisted(hItem.url, "keyword") # get rid of nasty google redirects
             @purgeBadUrl(hItem.url)
-            #deleteStack.push(hItem.url)
             deleteCount++
+
+      for badVisitTime in visitStack
+        chrome.history.deleteRange({startTime:badVisitTime-1, endTime:badVisitTime+1}, ->
+          doneCount++
+          console.log()
+        )
 
 
       console.log("!!!!!!!!!! DELETE COUNT !!!!!!!!!!", deleteCount)
