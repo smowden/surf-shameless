@@ -29,17 +29,17 @@ class MyBlacklist
     once initialization is done readyState is true
     ###
 
-    #console.log("init...")
+    console.log("init...")
 
     storedSettings = @loadSettings()
     settings = storedSettings if storedSettings != undefined
 
-    #console.log("settings", settings)
+    console.log("settings", settings)
     customBlacklist = @getCustomLists()
     joinedBlacklist = jQuery.extend(true, {}, customBlacklist)
 
 
-    #console.log("custom blacklist", customBlacklist)
+    console.log("custom blacklist", customBlacklist)
 
     @readyState = false
     if settings.myAvailableLists == undefined
@@ -51,7 +51,7 @@ class MyBlacklist
       )
 
     else
-      #console.log("enabling lists...")
+      console.log("enabling lists...")
       @loadEnabledLists()
 
 
@@ -82,7 +82,7 @@ class MyBlacklist
 
 
   storeObfuscatedBlacklist: ->
-    #console.log("storing custom blacklist", customBlacklist)
+    console.log("storing custom blacklist", customBlacklist)
     localStorage["customBlacklist"] = CryptoJS.AES.encrypt(JSON.stringify(customBlacklist), localStorage["obfuKey"]).toString()
 
   addToBlacklist: (type, entry) ->
@@ -108,7 +108,7 @@ class MyBlacklist
         @storeObfuscatedBlacklist()
 
   removeFromBlacklist: (type, entry) ->
-    #console.log("removeFromBlacklist", type, entry)
+    console.log("removeFromBlacklist", type, entry)
     entry = entry.toLowerCase()
     listIndex = customBlacklist[type+"s"].indexOf(entry)
     if listIndex >= 0
@@ -129,7 +129,8 @@ class MyBlacklist
 
     for s in lookupDir
       if type == "url"
-        if string.indexOf("http://www.#{s}") >= 0 or string.indexOf("http://#{s}") >= 0 or string.indexOf("https://#{s}") >= 0
+        r = new RegExp("http(s)?://(www.)?#{s}")
+        if string.match(r) != null
           return true
       else if type == "keyword"
         if string.indexOf(s) >= 0
@@ -147,12 +148,12 @@ class MyBlacklist
   loadEnabledLists: =>
     # minor bug, once a list is enabled it is loaded twice into the joined lists
     if settings.enabledLists
-      #console.log("enabledLists check")
+      console.log("enabledLists check")
       if settings.myAvailableLists
-        #console.log("myAvailableLists check")
+        console.log("myAvailableLists check")
         totalEnabled = 0
-        #console.log("available lists", settings.myAvailableLists)
-        #console.log("enabled lists", settings.enabledLists)
+        console.log("available lists", settings.myAvailableLists)
+        console.log("enabled lists", settings.enabledLists)
 
         enabledListsIndex = 0
         totalDisabled = 0
@@ -161,14 +162,14 @@ class MyBlacklist
           if settings.enabledLists[listName]
             enabledListsIndex++
             totalEnabled++
-            #console.log("loading list #{listName}")
+            console.log("loading list #{listName}")
             @loadList(undefined, listName, enabledListsIndex)
           else
             totalDisabled++
 
         if totalEnabled == 0 and totalDisabled > 0
           @readyState = true
-        #console.log("end of list enabler")
+        console.log("end of list enabler")
 
 
         return true
@@ -183,7 +184,7 @@ class MyBlacklist
         joinedBlacklist.urls = joinedBlacklist.urls.concat(listObject.content)
       else if listObject.type == "keywords"
         joinedBlacklist.keywords = joinedBlacklist.keywords.concat(listObject.content)
-      #console.log("joined blacklist", joinedBlacklist)
+      console.log("joined blacklist", joinedBlacklist)
       if index == totalEnabled
         @readyState = true
 
@@ -211,7 +212,7 @@ class WipeMode
     @init()
 
   init: () ->
-    #console.log("waiting for readyness")
+    console.log("waiting for readyness")
     unless myBlacklist.readyState
       setTimeout(
         =>
@@ -226,7 +227,7 @@ class WipeMode
   or whether redirects to blacklisted sites occured
   once all tabs with blacklisted urls are closed the history will be cleaned out
   ###
-  tabAdded: (tabId, changeInfo, tab) =>
+  tabAdded: (tabId, changeInfo, tab) ->
     currentUrl = tab.url
     if changeInfo.url
       currentUrl = changeInfo.url
@@ -235,7 +236,7 @@ class WipeMode
       firstBadTabTime = (new Date().getTime() - 10000) if not firstBadTabTime
       # ^ the 10 second difference is to make sure we wont miss anything
       openTabs.push(tabId)
-      #console.log(openTabs)
+      console.log(openTabs)
     else if not (myBlacklist.isBlacklisted(currentUrl, "url") or myBlacklist.isBlacklisted(tab.title, "keyword")) and openTabs.indexOf(tabId) >= 0
       @tabClosed(tabId)
       undefined
@@ -254,7 +255,7 @@ class WipeMode
   onRedirect: (details) ->
     if myBlacklist.isBlacklisted(details.redirectUrl, "url") and badRedirects.indexOf(details.redirectUrl)
       badRedirects.push(details.url)
-      #console.log(badRedirects)
+      console.log(badRedirects)
     undefined
 
   purgeBadUrl: (url) ->
@@ -264,49 +265,99 @@ class WipeMode
     therefore we need to make sure that both types of urls are deleted
     ###
 
+    console.log("purging url:", url)
+
     if url.indexOf("http") == -1
       ###
       if the url comes from a list and WipeMode is initialized it will only
       consist of domain.tld so we need to prefix it with the proper possible schemes
       otherwise it won't be deleted
       ###
-      url = "http://#{url}"
       httpsUrl = "https://#{url}"
+      url = "http://#{url}"
+    else
+      httpsUrl = url.replace("http://", "https://")
 
     chrome.history.deleteUrl({url: url})
-    chrome.history.deleteUrl({url: httpsUrl}) if httpsUrl
+    chrome.history.deleteUrl({url: httpsUrl})
 
     if url.indexOf("www") >= 0
       chrome.history.deleteUrl({url: url.replace("http://www.", "http://")})
-      #console.log("purged #{url.replace("http://www.", "http://")}")
+      chrome.history.deleteUrl({url: httpsUrl.replace("https://www.", "https://")})
+      console.log("purged #{url.replace("http://www.", "http://")}")
+      console.log("purged #{httpsUrl.replace("https://www.", "https://")}")
     else
       chrome.history.deleteUrl({url: url.replace("http://", "http://www.")})
-      #console.log("purged #{url.replace("http://", "http://www.")}")
+      chrome.history.deleteUrl({url: httpsUrl.replace("https://", "https://www.")})
+      console.log("purged #{url.replace("http://", "http://www.")}")
+      console.log("purged #{httpsUrl.replace("https://", "https://www.")}")
+
+  deleteEntries: (deleteStack) ->
+    url = deleteStack.pop()
+    httpsUrl = url.replace("http://", "https://")
+    _self = this
+
+    chrome.history.deleteUrl({url: url}, ->
+      chrome.history.deleteUrl({url: httpsUrl}, ->
+        if url.indexOf("www") >= 0
+          chrome.history.deleteUrl({url: url.replace("http://www.", "http://")}, ->
+            console.log("purged #{url.replace("http://www.", "http://")}")
+            chrome.history.deleteUrl({url: httpsUrl.replace("https://www.", "https://")}, ->
+              console.log("purged #{httpsUrl.replace("https://www.", "https://")}")
+              _self.deleteEntries(deleteStack)
+            )
+          )
+        else
+          chrome.history.deleteUrl({url: url.replace("http://", "http://www.")}, ->
+            console.log("purged #{url.replace("http://", "http://www.")}")
+            chrome.history.deleteUrl({url: httpsUrl.replace("https://", "https://www.")}, ->
+              console.log("purged #{httpsUrl.replace("https://", "https://www.")}")
+              _self.deleteEntries(deleteStack)
+            )
+          )
+      )
+    )
 
   wipeHistory: (startTime, doFullClean) ->
-
-    startTime = new Date(2000, 0, 1, 0).getTime() if not startTime
+    deleteStack = []
+    visitDeleteStack = []
+    startTime = new Date(2000, 0, 1).getTime() if not startTime
     endTime = new Date().getTime()
 
     if doFullClean
-      #console.log(myBlacklist.getBlacklist())
+      console.log(myBlacklist.getBlacklist())
       for site in myBlacklist.getBlacklist().urls
         @purgeBadUrl(site)
 
-    maxResults = 1000000000
+    maxResults = 100000000
     chrome.history.search(
       {text: "", startTime: startTime, endTime: endTime, maxResults: maxResults},
       # specifying a text for the search seems to just return completely random results
     (historyItems) =>
+
       deleteCount = 0
       for hItem in historyItems
         if myBlacklist.isBlacklisted(hItem.url, "url") or myBlacklist.isBlacklisted(hItem.title, "keyword")
-          @purgeBadUrl(hItem.url)
+          chrome.history.getVisits({url: hItem.url},
+            (results) ->
+              for visitItem in results
+                chrome.history.deleteRange({startTime:visitItem.visitTime-1, endTime:visitItem.visitTime+1}, ->
+                  console.log("deleted a range")
+                )
+          )
+          #@purgeBadUrl(hItem.url)
+          #chrome.history.deleteRange({startTime: hItem})
+          #deleteStack.push(hItem.url)
           deleteCount++
         if hItem.url.indexOf(".google.") >= 0
           if myBlacklist.isBlacklisted(hItem.url, "keyword") # get rid of nasty google redirects
             @purgeBadUrl(hItem.url)
+            #deleteStack.push(hItem.url)
             deleteCount++
+
+
+      console.log("!!!!!!!!!! DELETE COUNT !!!!!!!!!!", deleteCount)
+      #@deleteEntries(deleteStack)
 
       for nastyRedirect in badRedirects
         chrome.history.deleteUrl(url: nastyRedirect)
@@ -322,18 +373,22 @@ class WipeMode
 
   installListeners: ->
     chrome.tabs.onUpdated.addListener(
-      @tabAdded
+      (tabId, changeInfo, tab) =>
+        console.log(tabId, changeInfo, tab)
+        @tabAdded(tabId, changeInfo, tab)
     )
 
     chrome.tabs.onRemoved.addListener(
-      (tabId, removeInfo) ->
+      (tabId, removeInfo) =>
         @tabClosed(tabId)
     )
 
     chrome.webRequest.onBeforeRedirect.addListener(
-      @onRedirect,
+      (details) =>
+        @onRedirect(details)
+      ,
       {
-      urls: ["http://*/*"],
+      urls: ["*://*/*"],
       types: ["main_frame"]
       }
     )
@@ -376,7 +431,7 @@ class InterceptMode
       }
       , ->
         chrome.tabs.remove(details.tabId)
-        #console.log("spawned new window")
+        console.log("spawned new window")
     )
     {"cancel": true}
 
@@ -388,7 +443,7 @@ class InterceptMode
       tmpFilter.push("*://*.#{url}/*")
       tmpFilter.push("*://#{url}/*")
 
-    #console.log("tmp filter:", tmpFilter)
+    console.log("tmp filter:", tmpFilter)
     tmpFilter
 
 class PrivateBookmarks
@@ -418,8 +473,8 @@ class PrivateBookmarks
   addBookmark: (title, url) ->
     bookmark = {title: title, url: url}
     bookmarks.push(bookmark)
-    #console.log("saving bookmark", bookmark)
-    #console.log("private bookmarks", bookmarks)
+    console.log("saving bookmark", bookmark)
+    console.log("private bookmarks", bookmarks)
     @saveBookmarks()
 
   removeBookmark: (url) ->
@@ -460,7 +515,7 @@ class PrivateBookmarks
       })
       """
 
-    ##console.log("injecting script", injectScript)
+    #console.log("injecting script", injectScript)
 
     chrome.tabs.executeScript(tab.id, {"file": "js/jquery.min.js"}, ->
       chrome.tabs.executeScript(tab.id, {"file": "js/jquery-ui-1.8.21.custom.min.js"}, ->
@@ -528,7 +583,7 @@ reloadAll = ->
 
 chrome.extension.onRequest.addListener(
   (request, sender, sendResponse) ->
-    #console.log("got request", request)
+    console.log("got request", request)
     if request.action == "getAvailableLists"
       myBlacklist.getAvailableLists(undefined,true)
     else if request.action == "changeListState"
@@ -551,5 +606,5 @@ chrome.extension.onRequest.addListener(
     else if request.action == "getBookmarks"
       sendResponse(privateBookmarks.getBookmarks())
 
-    #console.log(request)
+    console.log(request)
 )
