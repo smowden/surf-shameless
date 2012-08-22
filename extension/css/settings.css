@@ -70,3 +70,7 @@
     padding: 1.1em;
     margin-top: 1.1em;
 }
+
+#progress_dialog{
+    display: none;
+}

@@ -127,10 +127,11 @@ class MyBlacklist
     lookupDir = joinedBlacklist.urls if type == "url"
     lookupDir = joinedBlacklist.keywords if type == "keyword"
 
-    if type == "url"
-      r = new RegExp("http(s)?://(www.)?(#{lookupDir.join("|")})")
-      if string.match(r) != null
-        return true
+    if lookupDir.length > 0
+      if type == "url"
+        r = new RegExp("http(s)?://(www.)?(#{lookupDir.join("|")})")
+        if string.search(r) >= 0
+          return true
 
       if type == "keyword"
         for s in lookupDir
@@ -337,25 +338,24 @@ class WipeMode
     (historyItems) =>
 
       deleteCount = 0
-      doneCount = 0
+      visitCount = 0
       for hItem in historyItems
         if myBlacklist.isBlacklisted(hItem.url, "url") or myBlacklist.isBlacklisted(hItem.title, "keyword")
           chrome.history.getVisits({url: hItem.url},
             (results) ->
+              visitCount += results.length
               for visitItem in results
-                visitStack.push(Math.round(visitItem.visitTime))
+                chrome.history.deleteRange({startTime:visitItem.visitTime-1, endTime:visitItem.visitTime+1}, ->
+                  deleteCount++
+                  localStorage["totalRemoved"] = JSON.parse(localStorage["totalRemoved"]) + 1
+                  chrome.extension.sendRequest({'sAction': 'showProgress', 'processed': deleteCount, 'total': visitCount})
+                )
           )
-          console.log("up for deletion", visitStack.length)
+
         if hItem.url.indexOf(".google.") >= 0
           if myBlacklist.isBlacklisted(hItem.url, "keyword") # get rid of nasty google redirects
             @purgeBadUrl(hItem.url)
             deleteCount++
-
-      for badVisitTime in visitStack
-        chrome.history.deleteRange({startTime:badVisitTime-1, endTime:badVisitTime+1}, ->
-          doneCount++
-          console.log()
-        )
 
 
       console.log("!!!!!!!!!! DELETE COUNT !!!!!!!!!!", deleteCount)
@@ -366,7 +366,6 @@ class WipeMode
         deleteCount++
 
       localStorage["popup_lastCleanupTime"] =  JSON.stringify(new Date)
-      localStorage["popup_cleanupUrlCounter"] =  deleteCount
       localStorage["totalRemoved"] = JSON.parse(localStorage["totalRemoved"]) + deleteCount
 
       undefined

@@ -152,6 +152,34 @@ $(
             $("#ef_allow_remote").attr("checked", "checked")
       )
 
+    chrome.extension.onRequest.addListener(
+      (request, sender, sendResponse) ->
+        console.log(request)
+        if request.sAction == "showProgress"
+
+          unless $("#progress_dialog").hasClass("ui-dialog-content")
+            $("#progress_dialog").dialog({
+              autoOpen: true,
+              width: "55em",
+              modal: true
+            })
+
+          if request.processed >= request.total
+            $("#progress_dialog").dialog("close")
+          else
+            $("#progress_dialog").dialog("open")
+
+          percent = request.processed/(request.total/100)
+          $("#progress_total").text(request.total)
+          $("#progress_processed").text(request.processed)
+
+          if $("#progress_bar").hasClass("ui-progressbar")
+            $("#progress_bar div").width(percent+"%")
+          else
+            $("#progress_bar").progressbar({value:percent}).width("50em")
+
+
+    )
 
     console.log("password length", localStorage["password"].length)
     if localStorage["password"].length == 0
@@ -187,6 +215,7 @@ $(
         alert("Url field is empty")
         return false
       customListAdd("url", $('#new_url_add').val())
+      $('#new_url_add').val("")
       getCustomList()
       false
     )
@@ -195,6 +224,7 @@ $(
         alert("Keyword field is empty")
         return false
       customListAdd("keyword", $('#new_keyword_add').val())
+      $('#new_keyword_add').val("")
       getCustomList()
       false
     )
