@@ -26,6 +26,7 @@ $(
             return alert("please select a mode of operation")
         else if curStepNo == 3
           localStorage["allowRemote"] = $("#ef_allow_remote").is(":checked")
+          localStorage["setupFinished"] = true
 
         curStep.hide()
         $("#step#{(curStepNo+1)}").show()
@@ -34,7 +35,6 @@ $(
     $("#finish").click(
       ->
         chrome.tabs.create({url: "settings.html#predefined_lists_tab"})
-        localStorage["setupFinished"] = true
         window.close()
     )
 
